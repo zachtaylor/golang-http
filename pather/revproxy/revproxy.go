@@ -1,23 +1,25 @@
 package revproxy
 
 import (
+	"net/http"
 	"net/http/httputil"
+	"net/url"
 
+	"taylz.io/http/pather"
 	"taylz.io/http/router"
-	"taylz.io/types"
 )
 
 // New creates a reverse proxy using a host matcher
-func New(srchost, desturl string) types.HTTPPath {
-	url, _ := types.ParseURL(desturl)
+func New(srchost, desturl string) pather.I {
+	url, _ := url.Parse(desturl)
 	revProxy := httputil.NewSingleHostReverseProxy(url)
-	revProxy.Director = func(req *types.HTTPRequest) {
+	revProxy.Director = func(req *http.Request) {
 		req.Header.Add("X-Forwarded-Host", req.Host)
 		req.Header.Add("X-Origin-Host", url.Host)
 		req.URL.Scheme = url.Scheme
 		req.URL.Host = url.Host
 	}
-	return types.HTTPPath{
+	return pather.T{
 		Router: router.Host(srchost),
 		Server: revProxy,
 	}

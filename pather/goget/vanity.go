@@ -2,21 +2,22 @@ package goget
 
 import (
 	"io/ioutil"
+	"net/http"
 	"strings"
 
+	"taylz.io/http/pather"
 	"taylz.io/http/router"
-	"taylz.io/types"
 )
 
-// NewVanityPather returns `types.HTTPPather` to support go get vanity urls
+// NewVanityPather returns `pather.I` to support go get vanity urls
 //
 // path is a system path pointing to a basic config file
-func NewVanityPather(path string) types.HTTPPather {
+func NewVanityPather(path string) pather.I {
 	env, err := NewVanity(path)
 	if err != nil {
 		panic(err)
 	}
-	return types.HTTPPath{
+	return pather.T{
 		Router: env,
 		Server: env,
 	}
@@ -46,7 +47,7 @@ func NewVanity(path string) (Vanity, error) {
 type Vanity map[string][]byte
 
 // RouteHTTP returns true for http.Requests using the "Go-http-client" User-Agent and where this Vanity server declares the requested package
-func (v Vanity) RouteHTTP(r *types.HTTPRequest) bool {
+func (v Vanity) RouteHTTP(r *http.Request) bool {
 	if !envRouterUA.RouteHTTP(r) {
 		return false
 	} else if pkg := ParsePackage(r); pkg == "" {
@@ -58,7 +59,7 @@ func (v Vanity) RouteHTTP(r *types.HTTPRequest) bool {
 }
 
 // ServeHTTP writes the data stored for the requested package if available
-func (v Vanity) ServeHTTP(w types.HTTPWriter, r *types.HTTPRequest) {
+func (v Vanity) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if pkg := ParsePackage(r); pkg == "" {
 	} else if data := v[pkg]; data == nil {
 	} else {
@@ -72,7 +73,7 @@ func FormatGoGet(vanityurl, hosturl string) string {
 }
 
 // ParsePackage checks the uri matches the pattern and returns the go package named by the uri
-func ParsePackage(r *types.HTTPRequest) string {
+func ParsePackage(r *http.Request) string {
 	const lensfx = len("?go-get=1")
 	if lenuri := len(r.RequestURI); lenuri <= 1+lensfx {
 		return ""

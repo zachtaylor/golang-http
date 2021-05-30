@@ -2,7 +2,7 @@ package server
 
 import "net/http"
 
-// RedirectHost is a types.HTTPServer that uses hostname rewrite redirect with http.StatusMovedPermanently
+// RedirectHost is a http.Handler that uses hostname rewrite redirect with http.StatusMovedPermanently
 func RedirectHost(host string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		proto := "http"

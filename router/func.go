@@ -1,10 +1,9 @@
 package router
 
-import "taylz.io/types"
+import "net/http"
 
 // Func satisfies HTTPRouter by being a func
-type Func func(*types.HTTPRequest) bool
+type Func func(*http.Request) bool
 
 // RouteHTTP satisfies HTTPRouter by calling the func
-func (f Func) RouteHTTP(r *types.HTTPRequest) bool { return f(r) }
-func (f Func) isRouter() types.HTTPRouter          { return f }
+func (f Func) RouteHTTP(r *http.Request) bool { return f(r) }

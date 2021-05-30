@@ -1,9 +1,8 @@
 package router
 
 import (
+	"net/http"
 	"strings"
-
-	"taylz.io/types"
 )
 
 // SinglePage is a HTTPRouter that checks for Single Page App response
@@ -11,7 +10,7 @@ import (
 // Request.Method is GET
 // Request.URL.Path does not have file extension after last /
 // Request.Header["Accept"] contains "text/html"
-var SinglePage = Func(func(r *types.HTTPRequest) bool {
+var SinglePage = Func(func(r *http.Request) bool {
 	if r.Method != "GET" || r.URL.Path == "/" {
 		return false
 	}

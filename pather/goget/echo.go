@@ -4,22 +4,22 @@ import (
 	"net/http"
 	"strings"
 
+	"taylz.io/http/pather"
 	"taylz.io/http/router"
-	"taylz.io/types"
 )
 
-// NewEchoDomainPath creates a new `types.HTTPPather` for go get style challenges
-func NewEchoDomainPath(domain string) types.HTTPPather {
-	return types.HTTPPath{
+// NewEchoDomainPath creates a new `pather.I` for go get style challenges
+func NewEchoDomainPath(domain string) pather.I {
+	return pather.T{
 		Router: router.UserAgent("Go-http-client"),
 		Server: NewEchoDomainServer(domain),
 	}
 }
 
-// NewEchoDomainServer creates a new `types.HTTPServer` which echos the requested package
+// NewEchoDomainServer creates a new `http.Handler` which echos the requested package
 //
 // Requires "git+https://{{host}}/" to work without auth
-func NewEchoDomainServer(host string) types.HTTPServer {
+func NewEchoDomainServer(host string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pkg := host + "/" + r.RequestURI[1:len(r.RequestURI)-len("?go-get=1")]
 		w.Write([]byte(strings.ReplaceAll(echoDomainTemplate, "$", pkg)))

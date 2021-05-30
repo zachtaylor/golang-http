@@ -1,12 +1,11 @@
 package router
 
-import "taylz.io/types"
+import "net/http"
 
-// method satisfies HTTPRouter by matching `Request.Method`
 type method string
 
-func (method method) RouteHTTP(r *types.HTTPRequest) bool { return string(method) == r.Method }
-func (method method) isHTTPRouter() types.HTTPRouter      { return method }
+// RouteHTTP satisfies HTTPRouter by matching `Request.Method`
+func (method method) RouteHTTP(r *http.Request) bool { return string(method) == r.Method }
 
 // CONNECT is a HTTPRouter that returns if `Request.Method` is CONNECT
 var CONNECT = method("CONNECT")

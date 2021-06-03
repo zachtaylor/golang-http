@@ -1,18 +1,17 @@
 package goget
 
 import (
-	"net/http"
 	"strings"
 
-	"taylz.io/http/pather"
+	"taylz.io/http"
 	"taylz.io/http/router"
 )
 
 // NewEchoDomainPath creates a new `pather.I` for go get style challenges
-func NewEchoDomainPath(domain string) pather.I {
-	return pather.T{
-		Router: router.UserAgent("Go-http-client"),
-		Server: NewEchoDomainServer(domain),
+func NewEchoDomainPath(domain string) http.Pather {
+	return http.Path{
+		Handler: NewEchoDomainServer(domain),
+		Router:  router.UserAgent("Go-http-client"),
 	}
 }
 

@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // Path satisfies HTTPRouter by matching `Request.URL.Path` exactly
 type Path string

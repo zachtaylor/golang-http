@@ -2,24 +2,23 @@ package goget
 
 import (
 	"io/ioutil"
-	"net/http"
 	"strings"
 
-	"taylz.io/http/pather"
+	"taylz.io/http"
 	"taylz.io/http/router"
 )
 
-// NewVanityPather returns `pather.I` to support go get vanity urls
+// NewVanityPather returns http.Pather to support go get vanity urls
 //
 // path is a system path pointing to a basic config file
-func NewVanityPather(path string) pather.I {
+func NewVanityPather(path string) http.Pather {
 	env, err := NewVanity(path)
 	if err != nil {
 		panic(err)
 	}
-	return pather.T{
-		Router: env,
-		Server: env,
+	return http.Path{
+		Handler: env,
+		Router:  env,
 	}
 }
 
@@ -62,6 +61,7 @@ func (v Vanity) RouteHTTP(r *http.Request) bool {
 func (v Vanity) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if pkg := ParsePackage(r); pkg == "" {
 	} else if data := v[pkg]; data == nil {
+		w.WriteHeader(http.StatusNotFound)
 	} else {
 		w.Write(data)
 	}

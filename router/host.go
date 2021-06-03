@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // Host satisfies HTTPRouter by matching `Request.Host`
 type Host string

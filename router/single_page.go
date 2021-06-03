@@ -1,8 +1,9 @@
 package router
 
 import (
-	"net/http"
 	"strings"
+
+	"taylz.io/http"
 )
 
 // SinglePage is a HTTPRouter that checks for Single Page App response

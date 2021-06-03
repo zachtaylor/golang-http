@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // TLSOn satisfies HTTPRouter by matching Request.TLS is non-nil
 var TLSOn = Func(func(r *http.Request) bool {

@@ -1,6 +1,6 @@
 package server
 
-import "net/http"
+import "taylz.io/http"
 
 // RedirectHost is a http.Handler that uses hostname rewrite redirect with http.StatusMovedPermanently
 func RedirectHost(host string) http.Handler {

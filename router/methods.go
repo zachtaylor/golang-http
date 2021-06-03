@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 type method string
 

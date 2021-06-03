@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // And creates a HTTPRouter group that returns true when all HTTPRouter in the group return true
 type And []I

@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // UserAgent is a HTTPRouter for matching User-Agent
 type UserAgent string

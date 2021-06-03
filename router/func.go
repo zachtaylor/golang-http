@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // Func satisfies HTTPRouter by being a func
 type Func func(*http.Request) bool

@@ -1,6 +1,6 @@
 package router
 
-import "net/http"
+import "taylz.io/http"
 
 // Bool satisfies HTTPRouter by returning a constant
 type Bool bool

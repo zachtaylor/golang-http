@@ -2,6 +2,9 @@ package http
 
 import "net/http"
 
+// Cookie =  http.Cookie
+type Cookie = http.Cookie
+
 // Dir = http.Dir
 type Dir = http.Dir
 
@@ -67,21 +70,21 @@ func (p Path) ServeHTTP(w ResponseWriter, r *Request) { p.Handler.ServeHTTP(w, r
 type Fork []Pather
 
 // Add appends a Pather to this Fork
-func (t *Fork) Add(p Pather) { *t = append(*t, p) }
+func (f *Fork) Add(p Pather) { *f = append(*f, p) }
 
 // Path calls Add with a new Path
 func (f *Fork) Path(r Router, h Handler) { f.Add(Path{Router: r, Handler: h}) }
 
 // ServeHTTP implements Handler by pathing to a branch
-func (t *Fork) ServeHTTP(w ResponseWriter, r *Request) {
-	var s Handler
-	for _, p := range *t {
+func (f *Fork) ServeHTTP(w ResponseWriter, r *Request) {
+	var h Handler
+	for _, p := range *f {
 		if p.RouteHTTP(r) {
-			s = p
+			h = p
 			break
 		}
 	}
-	if s != nil {
-		s.ServeHTTP(w, r)
+	if h != nil {
+		h.ServeHTTP(w, r)
 	}
 }

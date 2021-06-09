@@ -5,16 +5,21 @@ import "taylz.io/http/websocket"
 // T is a user, bridges session and websocket
 type T struct {
 	man     *websocket.Manager
+	name    string
 	sockets *Sockets
 }
 
 // New creates a user
-func New(man *websocket.Manager) *T {
+func New(man *websocket.Manager, name string) *T {
 	return &T{
 		man:     man,
+		name:    name,
 		sockets: NewSockets(),
 	}
 }
+
+// Name returns the name given during creation
+func (t *T) Name() string { return t.name }
 
 // Sockets returns the socket ids linked with the user
 func (t *T) Sockets() []string { return t.sockets.Keys() }

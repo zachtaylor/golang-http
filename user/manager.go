@@ -23,7 +23,7 @@ func (m *Manager) onSession(id string, oldSession, newSession *session.T) {
 	if newSession == nil {
 		m.Set(oldSession.Name(), nil)
 	} else {
-		m.Set(newSession.Name(), New(m.Sockets))
+		m.Set(newSession.Name(), New(m.Sockets, newSession.Name()))
 	}
 }
 

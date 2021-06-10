@@ -22,16 +22,16 @@ func NewManager(settings Settings, cache *Cache) (manager *Manager) {
 func (m *Manager) onSession(id string, oldSession, newSession *session.T) {
 	if newSession == nil {
 		m.Set(oldSession.Name(), nil)
-	} else {
-		m.Set(newSession.Name(), New(m.Sockets, newSession.Name()))
+	} else if name := newSession.Name(); len(name) > 0 {
+		m.Set(name, New(name))
 	}
 }
 
 func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
-	if newSocket == nil {
+	if newSocket != nil {
 		if name := newSocket.Name(); len(name) < 1 {
 		} else if user := m.Get(name); user != nil {
-			user.AddSocket(id)
+			user.AddSocket(newSocket)
 		}
 	} else if oldSocket != nil {
 		if name := oldSocket.Name(); len(name) < 1 {
@@ -44,6 +44,6 @@ func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
 // Authorize links a websocket to a session
 func (m *Manager) Authorize(session *session.T, ws *websocket.T) {
 	if user := m.Get(session.Name()); user != nil {
-		user.AddSocket(ws.ID())
+		user.AddSocket(ws)
 	}
 }

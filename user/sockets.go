@@ -4,45 +4,47 @@ package user
 
 import (
 	"sync"
+
+	"taylz.io/http/websocket"
 )
 
 // Sockets is an observable concurrent in-memory datastore
 type Sockets struct {
-	dat map[string]bool
+	dat map[string]*websocket.T
 	mu  sync.Mutex
 	obs []SocketsObserver
 }
 
-// SocketsGetter is a func(string)->bool
-type SocketsGetter = func(string) bool
+// SocketsGetter is a func(string)->*websocket.T
+type SocketsGetter = func(string) *websocket.T
 
-// SocketsObserver is a func(string, oldbool, newbool)
-type SocketsObserver = func(string, bool, bool)
+// SocketsObserver is a func(string, old*websocket.T, new*websocket.T)
+type SocketsObserver = func(string, *websocket.T, *websocket.T)
 
-// SocketsSetter is a func(string,bool)
-type SocketsSetter = func(string, bool)
+// SocketsSetter is a func(string,*websocket.T)
+type SocketsSetter = func(string, *websocket.T)
 
 // NewSockets returns a new Sockets
 func NewSockets() *Sockets {
 	return &Sockets{
-		dat: make(map[string]bool),
+		dat: make(map[string]*websocket.T),
 		obs: make([]SocketsObserver, 0),
 	}
 }
 
-// Get returns the bool for a string
-func (this *Sockets) Get(k string) bool { return this.dat[k] }
+// Get returns the *websocket.T for a string
+func (this *Sockets) Get(k string) *websocket.T { return this.dat[k] }
 
-// Set saves a bool for a string
-func (this *Sockets) Set(k string, v bool) {
+// Set saves a *websocket.T for a string
+func (this *Sockets) Set(k string, v *websocket.T) {
 	this.mu.Lock()
 	this.set(k, v)
 	this.mu.Unlock()
 }
 
-func (this *Sockets) set(k string, v bool) {
+func (this *Sockets) set(k string, v *websocket.T) {
 	old := this.dat[k]
-	if v != false {
+	if v != nil {
 		this.dat[k] = v
 	} else {
 		delete(this.dat, k)
@@ -52,7 +54,7 @@ func (this *Sockets) set(k string, v bool) {
 	}
 }
 
-// Each calls the func for each string,bool in this Sockets
+// Each calls the func for each string,*websocket.T in this Sockets
 func (this *Sockets) Each(f SocketsSetter) {
 	this.mu.Lock()
 	for k, v := range this.dat {
@@ -79,8 +81,8 @@ func (this *Sockets) Keys() []string {
 	return keys
 }
 
-// Observe adds a func to be called when a bool is set
+// Observe adds a func to be called when a *websocket.T is set
 func (this *Sockets) Observe(f SocketsObserver) { this.obs = append(this.obs, f) }
 
-// Remove deletes a string,bool
-func (this *Sockets) Remove(k string) { this.Set(k, false) }
+// Remove deletes a string,*websocket.T
+func (this *Sockets) Remove(k string) { this.Set(k, nil) }

@@ -4,15 +4,13 @@ import "taylz.io/http/websocket"
 
 // T is a user, bridges session and websocket
 type T struct {
-	man     *websocket.Manager
 	name    string
 	sockets *Sockets
 }
 
 // New creates a user
-func New(man *websocket.Manager, name string) *T {
+func New(name string) *T {
 	return &T{
-		man:     man,
 		name:    name,
 		sockets: NewSockets(),
 	}
@@ -25,21 +23,19 @@ func (t *T) Name() string { return t.name }
 func (t *T) Sockets() []string { return t.sockets.Keys() }
 
 // AddSocket adds a socket id to the user
-func (t *T) AddSocket(id string) { t.sockets.Set(id, true) }
+func (t *T) AddSocket(ws *websocket.T) { t.sockets.Set(ws.ID(), ws) }
 
 // RemoveSocket removes a socket id from the user
 func (t *T) RemoveSocket(id string) { t.sockets.Remove(id) }
 
-// Message calls Write using websocket.Transport data format
+// Message calls Write using websocket.Mesage.EncodeToJson
 func (t *T) Message(uri string, data map[string]interface{}) {
 	t.Write(websocket.Message{URI: uri, Data: data}.EncodeToJSON())
 }
 
 // Write writes the buffer to all sockets
 func (t *T) Write(bytes []byte) {
-	for _, k := range t.Sockets() {
-		if ws := t.man.Get(k); ws != nil {
-			ws.Write(bytes)
-		}
-	}
+	t.sockets.Each(func(id string, ws *websocket.T) {
+		ws.Write(bytes)
+	})
 }

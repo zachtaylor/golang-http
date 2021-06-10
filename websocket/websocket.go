@@ -1,8 +1,6 @@
 package websocket
 
-import (
-	"golang.org/x/net/websocket"
-)
+import "golang.org/x/net/websocket"
 
 // Conn = websocket.Conn
 type Conn = websocket.Conn

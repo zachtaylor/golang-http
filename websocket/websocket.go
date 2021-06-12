@@ -50,12 +50,11 @@ func (ws *T) Message(uri string, data MsgData) {
 	ws.Write(Message{URI: uri, Data: data}.EncodeToJSON())
 }
 
-// Write starts a goroutine to write bytes to to the socket API
-func (ws *T) Write(bytes []byte) { go ws.write(bytes) }
-func (ws *T) write(bytes []byte) { ws.out <- bytes }
+// Write starts a goroutine to call WriteSync
+func (ws *T) Write(bytes []byte) { go ws.WriteSync(bytes) }
 
-// Send calls package-level Send with websocket.conn
-func (ws *T) send(bytes []byte) error { return Send(ws.conn, bytes) }
+// WriteSync waits to put a buffer into send queue
+func (ws *T) WriteSync(bytes []byte) { ws.out <- bytes }
 
 // Close closes the observable channel
 func (ws *T) Close() {
@@ -76,7 +75,7 @@ func (ws *T) watchout() {
 				ws.Close()
 				return
 			}
-			if err := ws.send(buff); err != nil {
+			if err := Send(ws.conn, buff); err != nil {
 				ws.Close()
 				return
 			}
@@ -98,4 +97,10 @@ func (ws *T) watchin(handler Handler) {
 			go handler.ServeWS(ws, msg)
 		}
 	}
+}
+
+// Writer is an API for *websocket.T
+type Writer interface {
+	Message(uri string, data MsgData)
+	Write(bytes []byte)
 }

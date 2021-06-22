@@ -1,26 +1,27 @@
 package session
 
-import (
-	"time"
-
-	"taylz.io/http/keygen"
-)
+import "time"
 
 // Settings is configuration for sessions
 type Settings struct {
 	CookieID string
 	Secure   bool
 	Strict   bool
-	Keygen   keygen.Func
+	Keygen   func() string
 	Lifetime time.Duration
 }
 
-// SettingsDefault is a var Settings for using in basic case
-func DefaultSettings() Settings {
+func NewSettings(cookieID string, secure, strict bool, keygen func() string, lifetime time.Duration) Settings {
 	return Settings{
-		CookieID: "SessionID",
-		Strict:   true,
-		Keygen:   keygen.Default,
-		Lifetime: 12 * time.Hour,
+		CookieID: cookieID,
+		Secure:   secure,
+		Strict:   strict,
+		Keygen:   keygen,
+		Lifetime: lifetime,
 	}
+}
+
+// SettingsDefault is a var Settings for using in basic case
+func DefaultSettings(keygen func() string) Settings {
+	return NewSettings("SessionID", false, true, keygen, 12*time.Hour)
 }

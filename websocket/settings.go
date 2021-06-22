@@ -1,21 +1,19 @@
 package websocket
 
-import (
-	"taylz.io/http/keygen"
-	"taylz.io/http/session"
-)
+import "taylz.io/http/session"
 
+// Settings is a websocket manager Settings
 type Settings struct {
 	Sessions *session.Manager
-	Keygen   keygen.Func
+	Keygen   func() string
 	Handler  Handler
 }
 
-// DefaultSettings uses keygen.Default
-func DefaultSettings(sessions *session.Manager, handler Handler) Settings {
+// NewSettings returns a new Settings
+func NewSettings(sessions *session.Manager, keygen func() string, handler Handler) Settings {
 	return Settings{
 		Sessions: sessions,
-		Keygen:   keygen.Default,
+		Keygen:   keygen,
 		Handler:  handler,
 	}
 }

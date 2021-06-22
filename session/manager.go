@@ -12,8 +12,8 @@ type Manager struct {
 }
 
 // NewManager creates a session server
-func NewManager(settings Settings, cache *Cache) (manager *Manager) {
-	manager = &Manager{Settings: settings, Cache: cache}
+func NewManager(settings Settings) (manager *Manager) {
+	manager = &Manager{Settings: settings, Cache: NewCache()}
 	time.AfterFunc(manager.Lifetime, func() { manager.collectgarbage() })
 	return
 }
@@ -85,5 +85,5 @@ func (m *Manager) collectgarbage() {
 		m.set(key, nil)
 	}
 	m.mu.Unlock()
-	time.AfterFunc(time.Hour, func() { m.collectgarbage() })
+	time.AfterFunc(m.GC, func() { m.collectgarbage() })
 }

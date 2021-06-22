@@ -9,19 +9,22 @@ type Settings struct {
 	Strict   bool
 	Keygen   func() string
 	Lifetime time.Duration
+	GC       time.Duration
 }
 
-func NewSettings(cookieID string, secure, strict bool, keygen func() string, lifetime time.Duration) Settings {
+// NewSettings creates Settings
+func NewSettings(cookieID string, secure, strict bool, keygen func() string, lifetime, gc time.Duration) Settings {
 	return Settings{
 		CookieID: cookieID,
 		Secure:   secure,
 		Strict:   strict,
 		Keygen:   keygen,
 		Lifetime: lifetime,
+		GC:       gc,
 	}
 }
 
 // SettingsDefault is a var Settings for using in basic case
 func DefaultSettings(keygen func() string) Settings {
-	return NewSettings("SessionID", false, true, keygen, 12*time.Hour)
+	return NewSettings("SessionID", false, true, keygen, 12*time.Hour, time.Hour)
 }

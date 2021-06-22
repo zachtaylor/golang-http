@@ -8,8 +8,8 @@ type Manager struct {
 }
 
 // NewManager creates a session server
-func NewManager(settings Settings, cache *Cache) *Manager {
-	return &Manager{Settings: settings, Cache: cache}
+func NewManager(settings Settings) *Manager {
+	return &Manager{Settings: settings, Cache: NewCache()}
 }
 
 // Upgrader returns a new http.Handler that adds upgrades request to add a Websocket to this cache

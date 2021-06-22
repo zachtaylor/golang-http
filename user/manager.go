@@ -12,8 +12,8 @@ type Manager struct {
 }
 
 // NewManager creates a session server
-func NewManager(settings Settings, cache *Cache) (manager *Manager) {
-	manager = &Manager{Settings: settings, Cache: cache}
+func NewManager(settings Settings) (manager *Manager) {
+	manager = &Manager{Settings: settings, Cache: NewCache()}
 	settings.Sessions.Observe(manager.onSession)
 	settings.Sockets.Observe(manager.onWebsocket)
 	return

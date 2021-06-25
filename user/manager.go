@@ -25,7 +25,7 @@ func (m *Manager) onSession(id string, oldSession, newSession *session.T) {
 			go m.Set(name, nil)
 		}
 	} else if newSession != nil && oldSession == nil {
-		if name := oldSession.Name(); len(name) > 0 {
+		if name := newSession.Name(); len(name) > 0 {
 			go m.Set(name, New(name))
 		}
 	}

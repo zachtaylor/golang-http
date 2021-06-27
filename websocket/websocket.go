@@ -42,8 +42,11 @@ func New(conn *Conn, id string, name string) *T {
 // ID returns the websocket ID
 func (ws *T) ID() string { return ws.id }
 
-// Name returns the name given during creation
+// Name returns the name
 func (ws *T) Name() string { return ws.name }
+
+// SetName changes the name
+func (ws *T) SetName(name string) { ws.name = name }
 
 // Message calls Write using Message.JSON data format
 func (ws *T) Message(uri string, data MsgData) {

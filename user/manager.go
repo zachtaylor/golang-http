@@ -49,5 +49,6 @@ func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
 func (m *Manager) Authorize(session *session.T, ws *websocket.T) {
 	if user := m.Get(session.Name()); user != nil {
 		user.AddSocket(ws)
+		ws.SetName(session.Name())
 	}
 }

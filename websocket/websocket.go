@@ -1,6 +1,10 @@
 package websocket
 
-import "golang.org/x/net/websocket"
+import (
+	"sync"
+
+	"golang.org/x/net/websocket"
+)
 
 // Conn = websocket.Conn
 type Conn = websocket.Conn
@@ -24,6 +28,7 @@ type T struct {
 	name string
 	in   <-chan *Message
 	out  chan []byte
+	once sync.Once
 	done chan bool
 }
 
@@ -45,13 +50,8 @@ func (ws *T) ID() string { return ws.id }
 // Name returns the name
 func (ws *T) Name() string { return ws.name }
 
-// SetName changes the name
-func (ws *T) SetName(name string) { ws.name = name }
-
-// Message calls Write using Message.JSON data format
-func (ws *T) Message(uri string, data MsgData) {
-	ws.Write(Message{URI: uri, Data: data}.EncodeToJSON())
-}
+// Done returns the done channel
+func (ws *T) Done() <-chan bool { return ws.done }
 
 // Write starts a goroutine to call WriteSync
 func (ws *T) Write(bytes []byte) { go ws.WriteSync(bytes) }
@@ -59,26 +59,37 @@ func (ws *T) Write(bytes []byte) { go ws.WriteSync(bytes) }
 // WriteSync waits to put a buffer into send queue
 func (ws *T) WriteSync(bytes []byte) { ws.out <- bytes }
 
-// Close closes the observable channel
-func (ws *T) Close() {
-	if ws.done != nil {
+// Close closes the done channel, returns success
+func (ws *T) Close() (ok bool) {
+	ws.once.Do(func() {
+		ok = true
 		close(ws.done)
-		ws.done = nil
-	}
+		close(ws.out)
+	})
+	return
 }
 
+// watch starts goroutines for in and out, awaits <-done
+func (ws *T) watch(handler Handler) {
+	go ws.watchin(handler)
+	go ws.watchout()
+	<-ws.done
+}
+
+// watchout loops over out until done
 func (ws *T) watchout() {
 	for {
 		select {
 		case <-ws.done:
-			close(ws.out)
+			go DrainChanBytes(ws.out)
 			return
-		case buff, ok := <-ws.out: // write to client
+		case buff, ok := <-ws.out:
 			if !ok {
 				ws.Close()
 				return
 			}
 			if err := Send(ws.conn, buff); err != nil {
+				go DrainChanBytes(ws.out)
 				ws.Close()
 				return
 			}
@@ -86,6 +97,7 @@ func (ws *T) watchout() {
 	}
 }
 
+// watchin loops over in until done
 func (ws *T) watchin(handler Handler) {
 	for {
 		select {
@@ -97,13 +109,8 @@ func (ws *T) watchin(handler Handler) {
 				ws.Close()
 				return
 			}
+
 			go handler.ServeWS(ws, msg)
 		}
 	}
-}
-
-// Writer is an API for *websocket.T
-type Writer interface {
-	Message(uri string, data MsgData)
-	Write(bytes []byte)
 }

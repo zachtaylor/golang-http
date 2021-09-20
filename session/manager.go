@@ -7,59 +7,96 @@ import (
 
 // Manager is a session manager
 type Manager struct {
-	Settings
-	*Cache
+	settings Settings
+	cache    *Cache
 }
 
 // NewManager creates a session server
 func NewManager(settings Settings) (manager *Manager) {
-	manager = &Manager{Settings: settings, Cache: NewCache()}
-	time.AfterFunc(manager.Lifetime, func() { manager.collectgarbage() })
+	manager = &Manager{settings: settings, cache: NewCache()}
+	time.AfterFunc(manager.settings.Lifetime, func() { manager.collectgarbage() })
 	return
 }
 
-// Grant returns a new Session granted to the username
-func (m *Manager) Grant(name string) (session *T) {
-	m.mu.Lock()
-	var id string
-	for ok := true; ok; ok = m.Get(id) != nil {
-		id = m.Keygen()
+// ageLimit returns the age limit relative to time.Now()
+func (m *Manager) ageLimit() time.Time { return time.Now().Add(-m.settings.Lifetime) }
+
+// Must refreshes and returns the Session with the given username if one exists, and creates one if necessary
+func (m *Manager) Must(name string) (session *T) {
+	expiry := m.ageLimit()
+	m.cache.mu.Lock()
+	defer m.cache.mu.Unlock()
+	if session = m.getName(name, expiry); session != nil {
+		session.Update()
+		return
 	}
-	session = New(time.Now(), id, name)
-	m.set(id, session)
-	m.mu.Unlock()
+	var id string
+	for ok := true; ok; ok = m.get(id, expiry) != nil {
+		id = m.settings.Keygen()
+	}
+	session = New(id, name)
+	m.cache.set(id, session)
 	return
 }
 
-// GetName returns the Session with the username
+// Remove removes a Session
+func (m *Manager) Remove(id string) { m.cache.Set(id, nil) }
+
+// Observe adds a CacheObserver
+func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
+
+// Get returns a Session by ID
+func (m *Manager) Get(id string) *T { return m.get(id, m.ageLimit()) }
+
+// get checks expiry
+func (m *Manager) get(id string, expiry time.Time) (session *T) {
+	if session = m.cache.Get(id); session.time.Before(expiry) {
+		session = nil
+	}
+	return
+}
+
+// GetName returns Session by username
 func (m *Manager) GetName(name string) (session *T) {
-	m.mu.Lock()
-	for _, t := range m.dat {
-		if t.name == name {
+	expiry := m.ageLimit()
+	m.cache.mu.Lock()
+	session = m.getName(name, expiry)
+	m.cache.mu.Unlock()
+	return
+}
+
+// getName iterates m.cache.dat without locking m.cache.mu and check expiry
+func (m *Manager) getName(name string, expiry time.Time) (session *T) {
+	for _, t := range m.cache.dat {
+		if t.name == name && t.time.After(expiry) {
 			session = t
 			break
 		}
 	}
-	m.mu.Unlock()
 	return
 }
 
-// RequestSessionCookie returns Session associated to the Request via Session cookie
-func (m *Manager) RequestSessionCookie(r *http.Request) *T {
-	cookie, err := r.Cookie(m.CookieID)
-	if err != nil {
-		return nil
+// GetRequestCookie returns Session by Request.Cookie
+func (m *Manager) GetRequestCookie(r *http.Request) (session *T, err error) {
+	if cookie, _err := r.Cookie(m.settings.CookieID); _err != nil {
+		err = ErrNoCookie
+	} else if session = m.Get(cookie.Value); session == nil {
+		err = ErrExpired
 	}
-	return m.Get(cookie.Value)
+	return
 }
 
-// WriteSessionCookie writes the session cookie to the ResponseWriter
-func (m *Manager) WriteSessionCookie(w http.ResponseWriter, session *T) {
-	header := m.CookieID + "=" + session.id + "; Path=/; "
-	if m.Secure {
+// WriteSetCookie writes the Set-Cookie header
+func (m *Manager) WriteSetCookie(w http.ResponseWriter, session *T) {
+	if session == nil {
+		w.Header().Set("Set-Cookie", m.settings.CookieID+"=; Path=/; Expires==Thu, 01 Jan 1970 00:00:00 GMT;")
+		return
+	}
+	header := m.settings.CookieID + "=" + session.id + "; Path=/; "
+	if m.settings.Secure {
 		header += "Secure; "
 	}
-	if m.Strict {
+	if m.settings.Strict {
 		header += "SameSite=Strict;"
 	} else {
 		header += "SameSite=Lax;"
@@ -67,23 +104,18 @@ func (m *Manager) WriteSessionCookie(w http.ResponseWriter, session *T) {
 	w.Header().Set("Set-Cookie", header)
 }
 
-// WriteSessionCookieExpired writes an expired session cookie to the ResponseWriter
-func (s *Manager) WriteSessionCookieExpired(w http.ResponseWriter) {
-	w.Header().Set("Set-Cookie", s.CookieID+"=; Path=/; Expires==Thu, 01 Jan 1970 00:00:00 GMT;")
-}
-
 func (m *Manager) collectgarbage() {
+	expiry := m.ageLimit()
 	list := make([]string, 0)
-	expirey := time.Now().Add(-m.Lifetime)
-	m.mu.Lock()
-	for k, t := range m.dat {
-		if t.time.Before(expirey) {
+	m.cache.mu.Lock()
+	for k, t := range m.cache.dat {
+		if t.time.Before(expiry) {
 			list = append(list, k)
 		}
 	}
 	for _, key := range list {
-		m.set(key, nil)
+		m.cache.set(key, nil)
 	}
-	m.mu.Unlock()
-	time.AfterFunc(m.GC, func() { m.collectgarbage() })
+	m.cache.mu.Unlock()
+	time.AfterFunc(m.settings.GC, func() { m.collectgarbage() })
 }

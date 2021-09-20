@@ -27,30 +27,27 @@ func (msg Message) EncodeToJSON() []byte {
 
 func newChanMessage(conn *Conn) <-chan *Message {
 	msgs := make(chan *Message)
-	go func() {
-		for {
-			if msg, err := receiveMessage(conn); err == nil {
-				msgs <- msg
-			} else if err == io.EOF {
-				break
-			}
-		}
-		close(msgs)
-	}()
+	go receiveMessages(conn, msgs)
 	return msgs
 }
 
-func receiveMessage(conn *Conn) (msg *Message, err error) {
-	buf, err := Receive(conn)
-	if err != nil {
-		return nil, err
+func receiveMessages(conn *Conn, msgs chan *Message) {
+	for {
+		if msg, err := receiveMessage(conn); err == nil {
+			msgs <- msg
+		} else if err == io.EOF {
+			break
+		}
 	}
-	msg = &Message{}
-	err = json.NewDecoder(bytes.NewBufferString(buf)).Decode(msg)
-	return
+	close(msgs)
 }
 
-func drainChanMessage(msgs <-chan *Message) {
-	for ok := true; ok; _, ok = <-msgs {
+func receiveMessage(conn *Conn) (msg *Message, err error) {
+	if buf, _err := Receive(conn); _err != nil {
+		err = _err
+	} else if msg = (&Message{}); len(buf) < 1 {
+	} else if err = json.NewDecoder(bytes.NewBufferString(buf)).Decode(msg); err != nil {
+		msg = nil
 	}
+	return
 }

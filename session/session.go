@@ -10,8 +10,8 @@ type T struct {
 }
 
 // New creates a session
-func New(t time.Time, id, name string) *T {
-	return &T{time: t, id: id, name: name}
+func New(id, name string) *T {
+	return &T{id: id, name: name, time: time.Now()}
 }
 
 // Time returns the last updated time

@@ -30,12 +30,16 @@ func (m *Manager) onSession(id string, oldSession, newSession *session.T) {
 		}
 	} else if newSession != nil && oldSession == nil {
 		if name := newSession.Name(); len(name) > 0 {
-			go m.onSessionAddUser(name)
+			go m.onSessionAddUser(name, id)
 		}
 	}
 }
-func (m *Manager) onSessionAddUser(name string) { m.cache.Set(name, New(name)) }
-func (m *Manager) onSessionRemoveUser(user *T)  { m.cache.Set(user.close(m.settings.Sockets)) }
+func (m *Manager) onSessionAddUser(name, session string) {
+	m.cache.Set(name, New(name, session))
+}
+func (m *Manager) onSessionRemoveUser(user *T) {
+	m.cache.Set(user.close(m.settings.Sockets))
+}
 
 // onWebsocket is in the websocket cache hot path
 func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
@@ -52,9 +56,11 @@ func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
 	}
 }
 
-// Must returns the Session and User from session.Manager.Must
-func (m *Manager) Must(name string) (*session.T, *T) {
-	return m.settings.Sessions.Must(name), m.cache.Get(name)
+// Must returns the User and Session from session.Manager.Must
+func (m *Manager) Must(name string) (user *T, session *session.T) {
+	session = m.settings.Sessions.Must(name)
+	user = m.cache.Get(name)
+	return
 }
 
 // Count returns the current len of the map
@@ -63,18 +69,18 @@ func (m *Manager) Count() int { return len(m.cache.dat) }
 // Observe adds a callback CacheObserver
 func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
 
-// GetName returns the Session and User for the given name
-func (m *Manager) GetName(name string) (session *session.T, user *T, err error) {
-	if session = m.settings.Sessions.GetName(name); session == nil {
+// Get returns the User and Session for the given name
+func (m *Manager) Get(name string) (user *T, session *session.T, err error) {
+	if user = m.cache.Get(name); user == nil {
 		err = ErrNotFound
-	} else if user = m.cache.Get(session.Name()); user == nil {
-		session, err = nil, ErrSessionSync
+	} else if session = m.settings.Sessions.Get(user.session); session == nil {
+		user, err = nil, ErrExpired
 	}
 	return
 }
 
-// GetRequestCookie returns the Session and User
-func (m *Manager) GetRequestCookie(r *http.Request) (session *session.T, user *T, err error) {
+// GetRequestCookie returns the User and Session
+func (m *Manager) GetRequestCookie(r *http.Request) (user *T, session *session.T, err error) {
 	if session, err = m.settings.Sessions.GetRequestCookie(r); err != nil {
 	} else if user = m.cache.Get(session.Name()); user == nil {
 		session, err = nil, ErrSessionSync
@@ -84,10 +90,10 @@ func (m *Manager) GetRequestCookie(r *http.Request) (session *session.T, user *T
 
 // Authorize links an unnamed websocket to a user using m.Must
 func (m *Manager) Authorize(name string, ws *websocket.T) (session *session.T, user *T, err error) {
-	if _, old, _ := m.GetName(ws.Name()); old != nil {
+	if old, _, _ := m.Get(ws.Name()); old != nil {
 		old.RemoveSocket(ws.ID())
 	}
-	if session, user = m.Must(name); m.settings.Sockets.Rename(ws, name) {
+	if user, session = m.Must(name); m.settings.Sockets.Rename(ws, name) {
 		user.AddSocket(ws)
 	}
 	return

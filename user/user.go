@@ -9,6 +9,7 @@ import (
 // T is a user, bridges session and websocket
 type T struct {
 	name    string
+	session string
 	sockets *Sockets
 	buff    chan []byte
 	once    sync.Once
@@ -16,9 +17,10 @@ type T struct {
 }
 
 // New creates a user
-func New(name string) (user *T) {
+func New(name, session string) (user *T) {
 	user = &T{
 		name:    name,
+		session: session,
 		done:    make(chan bool),
 		buff:    make(chan []byte),
 		sockets: NewSockets(),
@@ -29,6 +31,9 @@ func New(name string) (user *T) {
 
 // Name returns the name given during creation
 func (t *T) Name() string { return t.name }
+
+// SessionID returns the sessionid given during creation
+func (t *T) SessionID() string { return t.session }
 
 // Done returns the done channel for user
 func (t *T) Done() <-chan bool { return t.done }
@@ -58,8 +63,9 @@ func (t *T) writeSync(bytes []byte) {
 // close is a special hook for the manager
 func (t *T) close(man *websocket.Manager) (string, *T) {
 	t.once.Do(func() {
-		man.Unname(t.sockets.Keys())
 		close(t.done)
+		man.Unname(t.sockets.Keys())
+		t.sockets = nil
 		close(t.buff)
 	})
 	return t.name, nil

@@ -52,13 +52,16 @@ func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
 	}
 }
 
-// Observe adds a callback CacheObserver
-func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
-
 // Must returns the Session and User from session.Manager.Must
 func (m *Manager) Must(name string) (*session.T, *T) {
 	return m.settings.Sessions.Must(name), m.cache.Get(name)
 }
+
+// Count returns the current len of the map
+func (m *Manager) Count() int { return len(m.cache.dat) }
+
+// Observe adds a callback CacheObserver
+func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
 
 // GetName returns the Session and User for the given name
 func (m *Manager) GetName(name string) (session *session.T, user *T, err error) {
@@ -81,9 +84,10 @@ func (m *Manager) GetRequestCookie(r *http.Request) (session *session.T, user *T
 
 // Authorize links an unnamed websocket to a user using m.Must
 func (m *Manager) Authorize(name string, ws *websocket.T) (session *session.T, user *T, err error) {
-	if session, user = m.Must(name); user == nil {
-		err = ErrSessionSync
-	} else if m.settings.Sockets.Rename(ws, name) {
+	if _, old, _ := m.GetName(ws.Name()); old != nil {
+		old.RemoveSocket(ws.ID())
+	}
+	if session, user = m.Must(name); m.settings.Sockets.Rename(ws, name) {
 		user.AddSocket(ws)
 	}
 	return

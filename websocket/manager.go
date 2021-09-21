@@ -9,14 +9,24 @@ type Manager struct {
 }
 
 // NewManager creates a websocket manager
-func NewManager(settings Settings, cache *Cache) *Manager {
+func NewManager(settings Settings) *Manager {
 	return &Manager{settings: settings, cache: NewCache()}
 }
 
-// Upgrader returns a new http.Handler that upgrades requests to add Websockets to Manager.Cache
-func (m *Manager) Upgrader() http.Handler {
-	return Upgrader(m.connect)
-}
+// Get returns the websocket by id
+func (m *Manager) Get(id string) *T { return m.cache.dat[id] }
+
+// Count returns the current len of the map
+func (m *Manager) Count() int { return len(m.cache.dat) }
+
+// Observe adds a CacheObserver
+func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
+
+// Each calls the func for each websocket (under lock)
+func (m *Manager) Each(f func(string, *T)) { m.cache.Each(f) }
+
+// NewUpgrader returns a new http.Handler that upgrades requests to add Websockets to Manager.Cache
+func (m *Manager) NewUpgrader() http.Handler { return Upgrader(m.connect) }
 
 func (m *Manager) connect(conn *Conn) {
 	var name string
@@ -38,7 +48,7 @@ func (m *Manager) connect(conn *Conn) {
 // Rename changes the internal name of a managed websocket
 func (m *Manager) Rename(ws *T, name string) (ok bool) {
 	m.cache.mu.Lock()
-	if (len(name) < 1) != (len(ws.name) < 1) && ws != m.cache.dat[ws.id] {
+	if ws != m.cache.dat[ws.id] {
 		ok, ws.name = true, name
 	}
 	m.cache.mu.Unlock()
@@ -55,9 +65,3 @@ func (m *Manager) Unname(ids []string) {
 	}
 	m.cache.mu.Unlock()
 }
-
-// Get returns the websocket by id
-func (m *Manager) Get(id string) *T { return m.cache.dat[id] }
-
-// Observe adds a CacheObserver
-func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }

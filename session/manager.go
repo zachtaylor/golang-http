@@ -39,12 +39,6 @@ func (m *Manager) Must(name string) (session *T) {
 	return
 }
 
-// Remove removes a Session
-func (m *Manager) Remove(id string) { m.cache.Set(id, nil) }
-
-// Observe adds a CacheObserver
-func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
-
 // Get returns a Session by ID
 func (m *Manager) Get(id string) *T { return m.get(id, m.ageLimit()) }
 
@@ -56,12 +50,23 @@ func (m *Manager) get(id string, expiry time.Time) (session *T) {
 	return
 }
 
+// Count returns the current len of the map
+func (m *Manager) Count() int { return len(m.cache.dat) }
+
+// Remove removes a Session
+func (m *Manager) Remove(id string) { m.cache.Set(id, nil) }
+
+// Observe adds a CacheObserver
+func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
+
 // GetName returns Session by username
 func (m *Manager) GetName(name string) (session *T) {
-	expiry := m.ageLimit()
-	m.cache.mu.Lock()
-	session = m.getName(name, expiry)
-	m.cache.mu.Unlock()
+	if len(name) > 1 {
+		expiry := m.ageLimit()
+		m.cache.mu.Lock()
+		session = m.getName(name, expiry)
+		m.cache.mu.Unlock()
+	}
 	return
 }
 

@@ -44,7 +44,7 @@ func (m *Manager) Get(id string) *T { return m.get(id, m.ageLimit()) }
 
 // get checks expiry
 func (m *Manager) get(id string, expiry time.Time) (session *T) {
-	if session = m.cache.Get(id); session.time.Before(expiry) {
+	if session = m.cache.Get(id); session != nil && session.time.Before(expiry) {
 		session = nil
 	}
 	return

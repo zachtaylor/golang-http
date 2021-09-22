@@ -29,38 +29,38 @@ func (m *Manager) Each(f func(string, *T)) { m.cache.Each(f) }
 func (m *Manager) NewUpgrader() http.Handler { return Upgrader(m.connect) }
 
 func (m *Manager) connect(conn *Conn) {
-	var name string
+	var sessionID string
 	if session, _ := m.settings.Sessions.GetRequestCookie(conn.Request()); session != nil {
-		name = session.Name()
+		sessionID = session.ID()
 	}
 	m.cache.mu.Lock()
 	var id string
 	for ok := true; ok; ok = m.Get(id) != nil {
 		id = m.settings.Keygen()
 	}
-	ws := New(conn, id, name)
+	ws := New(conn, id, sessionID)
 	m.cache.set(id, ws)
 	m.cache.mu.Unlock()
 	ws.watch(m.settings.Handler)
 	m.cache.Remove(ws.id)
 }
 
-// Rename changes the internal name of a managed websocket
-func (m *Manager) Rename(ws *T, name string) (ok bool) {
+// SetSessionID changes the internal SessionID of a managed websocket
+func (m *Manager) SetSessionID(ws *T, sessionID string) (ok bool) {
 	m.cache.mu.Lock()
 	if ws != m.cache.dat[ws.id] {
-		ok, ws.name = true, name
+		ok, ws.session = true, sessionID
 	}
 	m.cache.mu.Unlock()
 	return
 }
 
-// Unname wipes the internal name of managed websockets
-func (m *Manager) Unname(ids []string) {
+// RemoveSessionWebsockets wipes the internal SessionID of managed websockets by socketID
+func (m *Manager) RemoveSessionWebsockets(ids []string) {
 	m.cache.mu.Lock()
 	for _, id := range ids {
 		if ws := m.Get(id); ws != nil {
-			ws.name = ""
+			ws.session = ""
 		}
 	}
 	m.cache.mu.Unlock()

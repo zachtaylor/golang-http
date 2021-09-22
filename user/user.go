@@ -60,15 +60,13 @@ func (t *T) writeSync(bytes []byte) {
 	})
 }
 
-// close is a special hook for the manager
-func (t *T) close(man *websocket.Manager) (string, *T) {
+// close closes the channels and nils the pointers
+func (t *T) close() {
 	t.once.Do(func() {
 		close(t.done)
-		man.Unname(t.sockets.Keys())
 		t.sockets = nil
 		close(t.buff)
 	})
-	return t.name, nil
 }
 
 // watchBuff loops over buff until done

@@ -23,32 +23,32 @@ func Receive(conn *Conn) (buf string, err error) {
 
 // T is a Websocket
 type T struct {
-	conn *Conn
-	id   string
-	name string
-	in   <-chan *Message
-	out  chan []byte
-	once sync.Once
-	done chan bool
+	conn    *Conn
+	id      string
+	session string
+	in      <-chan *Message
+	out     chan []byte
+	once    sync.Once
+	done    chan bool
 }
 
 // New creates a websocket wrapper T
-func New(conn *Conn, id string, name string) *T {
+func New(conn *Conn, id string, sessionID string) *T {
 	return &T{
-		conn: conn,
-		id:   id,
-		name: name,
-		in:   newChanMessage(conn),
-		out:  make(chan []byte),
-		done: make(chan bool),
+		conn:    conn,
+		id:      id,
+		session: sessionID,
+		in:      newChanMessage(conn),
+		out:     make(chan []byte),
+		done:    make(chan bool),
 	}
 }
 
 // ID returns the websocket ID
 func (ws *T) ID() string { return ws.id }
 
-// Name returns the name
-func (ws *T) Name() string { return ws.name }
+// SessionID returns the associated SessionID, if available
+func (ws *T) SessionID() string { return ws.session }
 
 // Done returns the done channel
 func (ws *T) Done() <-chan bool { return ws.done }

@@ -1,5 +1,5 @@
 module taylz.io/http
 
-go 1.16
+go 1.17
 
-require golang.org/x/net v0.0.0-20210525063256-abc453219eb5
+require golang.org/x/net v0.0.0-20211011170408-caeb26a5c8c0

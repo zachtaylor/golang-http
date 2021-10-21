@@ -24,7 +24,7 @@ func NewSettings(cookieID string, secure, strict bool, keygen func() string, lif
 	}
 }
 
-// SettingsDefault is a var Settings for using in basic case
+// DefaultSettings returns Settings for using in a basic case
 func DefaultSettings(keygen func() string) Settings {
 	return NewSettings("SessionID", false, true, keygen, 12*time.Hour, time.Hour)
 }

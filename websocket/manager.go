@@ -48,7 +48,7 @@ func (m *Manager) connect(conn *Conn) {
 // SetSessionID changes the internal SessionID of a managed websocket
 func (m *Manager) SetSessionID(ws *T, sessionID string) (ok bool) {
 	m.cache.mu.Lock()
-	if ws != m.cache.dat[ws.id] {
+	if ws == m.cache.dat[ws.id] {
 		ok, ws.session = true, sessionID
 	}
 	m.cache.mu.Unlock()

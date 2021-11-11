@@ -22,8 +22,13 @@ type Path struct {
 	Router  Router
 }
 
+// NewPath creates a Path
+func NewPath(handler Handler, router Router) Path { return Path{Handler: handler, Router: router} }
+
+// RouteWS implements Router by calling the delegate
 func (p Path) RouteWS(msg *Message) bool { return p.Router.RouteWS(msg) }
 
+// ServeWS implements Handler by calling the delegate
 func (p Path) ServeWS(ws *T, msg *Message) { p.Handler.ServeWS(ws, msg) }
 
 // Fork is a Pather made of []Pather
@@ -49,7 +54,7 @@ func (f *Fork) ServeWS(ws *T, msg *Message) {
 	}
 }
 
-// HandlerFunc allows to make a func into a Handler
+// HandlerFunc is a func type for Handler
 type HandlerFunc func(*T, *Message)
 
 // ServeWS implements Handler by calling the func
@@ -66,3 +71,8 @@ type RouterURI string
 
 // RouteWS implements Router by literally matching the Message.URI
 func (r RouterURI) RouteWS(m *Message) bool { return string(r) == m.URI }
+
+// RouterYes returns a Router that matches any Message
+func RouterYes() Router {
+	return RouterFunc(func(*Message) bool { return true })
+}

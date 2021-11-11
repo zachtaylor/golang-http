@@ -2,8 +2,8 @@ package router
 
 import "taylz.io/http"
 
-// Func satisfies HTTPRouter by being a func
+// Func is a func type http.Router
 type Func func(*http.Request) bool
 
-// RouteHTTP satisfies HTTPRouter by calling the func
+// RouteHTTP implements http.Router by calling f
 func (f Func) RouteHTTP(r *http.Request) bool { return f(r) }

@@ -61,20 +61,19 @@ func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
 
 // GetName returns Session by username
 func (m *Manager) GetName(name string) (session *T) {
-	if len(name) > 1 {
-		expiry := m.ageLimit()
-		m.cache.mu.Lock()
-		session = m.getName(name, expiry)
-		m.cache.mu.Unlock()
-	}
+	m.cache.mu.Lock()
+	session = m.getName(name, m.ageLimit())
+	m.cache.mu.Unlock()
 	return
 }
 
 // getName iterates m.cache.dat without locking m.cache.mu and check expiry
 func (m *Manager) getName(name string, expiry time.Time) (session *T) {
 	for _, t := range m.cache.dat {
-		if t.name == name && t.time.After(expiry) {
-			session = t
+		if t.name == name {
+			if t.time.After(expiry) {
+				session = t
+			}
 			break
 		}
 	}
@@ -84,7 +83,7 @@ func (m *Manager) getName(name string, expiry time.Time) (session *T) {
 // GetRequestCookie returns Session by Request.Cookie
 func (m *Manager) GetRequestCookie(r *http.Request) (session *T, err error) {
 	if cookie, _err := r.Cookie(m.settings.CookieID); _err != nil {
-		err = ErrNoCookie
+		err = ErrNoID
 	} else if session = m.Get(cookie.Value); session == nil {
 		err = ErrExpired
 	}
@@ -122,5 +121,5 @@ func (m *Manager) collectgarbage() {
 		m.cache.set(key, nil)
 	}
 	m.cache.mu.Unlock()
-	time.AfterFunc(m.settings.GC, func() { m.collectgarbage() })
+	time.AfterFunc(m.settings.GC, m.collectgarbage)
 }

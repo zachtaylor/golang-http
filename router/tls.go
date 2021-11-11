@@ -2,12 +2,10 @@ package router
 
 import "taylz.io/http"
 
-// TLSOn satisfies HTTPRouter by matching Request.TLS is non-nil
-var TLSOn = Func(func(r *http.Request) bool {
-	return r.TLS != nil
-})
+// TLS is a bool type that matches Request.TLS existence
+type TLS bool
 
-// TLSOff satisfies HTTPRouter by matching Request.TLS is nil
-var TLSOff = Func(func(r *http.Request) bool {
-	return r.TLS == nil
-})
+// RouteHTTP implements http.Router by matching TLS on/off
+func (tls TLS) RouteHTTP(r *http.Request) bool {
+	return tls == (r.TLS != nil)
+}

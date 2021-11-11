@@ -28,6 +28,7 @@ func (m *Manager) Each(f func(string, *T)) { m.cache.Each(f) }
 // NewUpgrader returns a new http.Handler that upgrades requests to add Websockets to Manager.Cache
 func (m *Manager) NewUpgrader() http.Handler { return Upgrader(m.connect) }
 
+// connect is called by the websocket api connection upgrader
 func (m *Manager) connect(conn *Conn) {
 	var sessionID string
 	if session, _ := m.settings.Sessions.GetRequestCookie(conn.Request()); session != nil {

@@ -2,8 +2,8 @@ package router
 
 import "taylz.io/http"
 
-// Host satisfies HTTPRouter by matching `Request.Host`
+// Host is a string type for matching Request.Host
 type Host string
 
-// RouteHTTP satisfies HTTPRouter by matching `Request.Host`
+// RouteHTTP implements http.Router by matching Request.Host
 func (host Host) RouteHTTP(r *http.Request) bool { return string(host) == r.Host }

@@ -1,4 +1,4 @@
-package websocket
+package websocket // import "taylz.io/http/websocket"
 
 import (
 	"sync"

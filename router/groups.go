@@ -2,10 +2,10 @@ package router
 
 import "taylz.io/http"
 
-// And creates a HTTPRouter group that returns true when all HTTPRouter in the group return true
-type And []I
+// And is a http.Router group that returns true when all http.Router in the group return true
+type And []http.Router
 
-// RouteHTTP satisfies HTTPRouter by verifying all HTTPRouter in the set return true
+// RouteHTTP implements http.Router by verifying all http.Router in the group return true
 func (and And) RouteHTTP(r *http.Request) bool {
 	for _, router := range and {
 		if !router.RouteHTTP(r) {
@@ -15,10 +15,10 @@ func (and And) RouteHTTP(r *http.Request) bool {
 	return true
 }
 
-// Or creates a HTTPRouter group that returns true when any HTTPRouter in the group returns true
-type Or []I
+// Or is a http.Router group that returns true when any http.Router in the group returns true
+type Or []http.Router
 
-// RouteHTTP satisfies HTTPRouter by verifying any HTTPRouter in the set returns true
+// RouteHTTP implements http.Router by verifying any http.Router in the group returns true
 func (or Or) RouteHTTP(r *http.Request) bool {
 	for _, router := range or {
 		if router.RouteHTTP(r) {

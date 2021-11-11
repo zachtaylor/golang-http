@@ -2,7 +2,7 @@ package router
 
 import "taylz.io/http"
 
-// UserAgent is a HTTPRouter for matching User-Agent
+// UserAgent is a string type for matching Request.Header["User-Agent"]
 type UserAgent string
 
 // RouteHTTP matches the first chars of Request.Header["User-Agent"]

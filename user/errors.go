@@ -7,8 +7,8 @@ import (
 )
 
 var (
-	// ErrNotFound is returned by the Manager when a user or session is missing in cache
-	ErrNotFound = errors.New("user not found")
+	// ErrNoID(=session.ErrNoID) is returned by the Manager when user information is missing
+	ErrNoID = session.ErrNoID
 	// ErrExpired(=session.ErrExpired) is returned by the Manager when the session is expired
 	ErrExpired = session.ErrExpired
 	// ErrSessionSync is returned by the Manager when a caching issue arises with session.Manager

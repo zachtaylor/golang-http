@@ -1,4 +1,4 @@
-package session
+package session // import "taylz.io/http/session"
 
 import "time"
 

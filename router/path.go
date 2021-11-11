@@ -2,16 +2,16 @@ package router
 
 import "taylz.io/http"
 
-// Path satisfies HTTPRouter by matching `Request.URL.Path` exactly
+// Path is a string type that matches a path literal
 type Path string
 
-// RouteHTTP satisfies HTTPRouter by matching the request path exactly
+// RouteHTTP implements http.Router by literally matching the request path
 func (path Path) RouteHTTP(r *http.Request) bool { return string(path) == r.URL.Path }
 
-// PathStarts satisfies HTTPRouter by matching path starting with given prefix
+// PathStarts is a string type that matches paths starting with a given prefix
 type PathStarts string
 
-// RouteHTTP satisfies HTTPRouter by matching the path prefix
+// RouteHTTP implements http.Router by matching the path prefix
 func (prefix PathStarts) RouteHTTP(r *http.Request) bool {
 	lp := len(prefix)
 	if len(r.URL.Path) < lp {

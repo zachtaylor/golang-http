@@ -1,4 +1,4 @@
-package user
+package user // import "taylz.io/http/user"
 
 import (
 	"sync"

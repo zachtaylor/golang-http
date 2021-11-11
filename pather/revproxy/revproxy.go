@@ -1,4 +1,4 @@
-package revproxy
+package revproxy // import "taylz.io/http/pather/revproxy"
 
 import (
 	"net/http/httputil"

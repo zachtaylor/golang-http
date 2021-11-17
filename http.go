@@ -9,9 +9,7 @@ type Cookie = http.Cookie
 type Dir = http.Dir
 
 // FileServer calls http.FileServer
-func FileServer(root FileSystem) Handler {
-	return http.FileServer(root)
-}
+func FileServer(root FileSystem) Handler { return http.FileServer(root) }
 
 // FileSystem = http.FileSystem
 type FileSystem = http.FileSystem
@@ -44,21 +42,22 @@ type Request = http.Request
 type ResponseWriter = http.ResponseWriter
 
 // Router is an routing interface
-type Router interface {
-	RouteHTTP(*http.Request) bool
-}
+type Router interface{ RouteHTTP(*http.Request) bool }
 
-// Pather is a Handler and Router
+// Pather is a Router and Handler
 type Pather interface {
-	Handler
 	Router
+	Handler
 }
 
-// Path is a struct with Handler and Router pointers
+// Path is a struct with Router and Handler pointers
 type Path struct {
-	Handler Handler
 	Router  Router
+	Handler Handler
 }
+
+// NewPath creates a Path
+func NewPath(router Router, handler Handler) Path { return Path{Router: router, Handler: handler} }
 
 // RouteHTTP implements Router by calling calling the internal Router
 func (p Path) RouteHTTP(r *Request) bool { return p.Router.RouteHTTP(r) }
@@ -68,6 +67,9 @@ func (p Path) ServeHTTP(w ResponseWriter, r *Request) { p.Handler.ServeHTTP(w, r
 
 // Fork is a Pather made of []Pather
 type Fork []Pather
+
+// NewFork creates a Fork
+func NewFork() *Fork { return &Fork{} }
 
 // Add appends a Pather to this Fork
 func (f *Fork) Add(p Pather) { *f = append(*f, p) }

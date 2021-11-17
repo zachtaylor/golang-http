@@ -4,13 +4,18 @@ import "net/http"
 
 // Manager is a websocket manager
 type Manager struct {
+	server   Server
 	settings Settings
 	cache    *Cache
 }
 
 // NewManager creates a websocket manager
-func NewManager(settings Settings) *Manager {
-	return &Manager{settings: settings, cache: NewCache()}
+func NewManager(server Server, settings Settings) *Manager {
+	return &Manager{
+		server:   server,
+		settings: settings,
+		cache:    NewCache(),
+	}
 }
 
 // Get returns the websocket by id
@@ -31,7 +36,7 @@ func (m *Manager) NewUpgrader() http.Handler { return Upgrader(m.connect) }
 // connect is called by the websocket api connection upgrader
 func (m *Manager) connect(conn *Conn) {
 	var sessionID string
-	if session, _ := m.settings.Sessions.GetRequestCookie(conn.Request()); session != nil {
+	if session, _ := m.server.GetSessionManager().GetRequestCookie(conn.Request()); session != nil {
 		sessionID = session.ID()
 	}
 	m.cache.mu.Lock()
@@ -42,7 +47,7 @@ func (m *Manager) connect(conn *Conn) {
 	ws := New(conn, id, sessionID)
 	m.cache.set(id, ws)
 	m.cache.mu.Unlock()
-	ws.watch(m.settings.Handler)
+	ws.watch(m.server.GetWebsocketHandler())
 	m.cache.Remove(ws.id)
 }
 

@@ -1,29 +1,25 @@
 package websocket
 
-// Handler is an interface hook for websocket API
-type Handler interface {
-	ServeWS(*T, *Message)
-}
-
 // Router is used to route Messages
-type Router interface {
-	RouteWS(*Message) bool
-}
+type Router interface{ RouteWS(*Message) bool }
+
+// Handler is an interface hook for websocket API
+type Handler interface{ ServeWS(*T, *Message) }
 
 // Pather is a Handler and Router
 type Pather interface {
-	Handler
 	Router
+	Handler
 }
 
 // Path is a struct with Handler and Router pointers
 type Path struct {
-	Handler Handler
 	Router  Router
+	Handler Handler
 }
 
 // NewPath creates a Path
-func NewPath(handler Handler, router Router) Path { return Path{Handler: handler, Router: router} }
+func NewPath(router Router, handler Handler) Path { return Path{Router: router, Handler: handler} }
 
 // RouteWS implements Router by calling the delegate
 func (p Path) RouteWS(msg *Message) bool { return p.Router.RouteWS(msg) }
@@ -33,6 +29,9 @@ func (p Path) ServeWS(ws *T, msg *Message) { p.Handler.ServeWS(ws, msg) }
 
 // Fork is a Pather made of []Pather
 type Fork []Pather
+
+// NewFork creates a Fork
+func NewFork() *Fork { return &Fork{} }
 
 // Add appends a Pather to this Fork
 func (f *Fork) Add(p Pather) { *f = append(*f, p) }
@@ -73,6 +72,4 @@ type RouterURI string
 func (r RouterURI) RouteWS(m *Message) bool { return string(r) == m.URI }
 
 // RouterYes returns a Router that matches any Message
-func RouterYes() Router {
-	return RouterFunc(func(*Message) bool { return true })
-}
+func RouterYes() Router { return RouterFunc(func(*Message) bool { return true }) }

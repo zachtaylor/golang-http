@@ -9,15 +9,15 @@ import (
 
 // Manager is a user manager
 type Manager struct {
-	settings Settings
-	cache    *Cache
+	server Server
+	cache  *Cache
 }
 
-// NewManager creates a session server
-func NewManager(settings Settings) (manager *Manager) {
-	manager = &Manager{settings: settings, cache: NewCache()}
-	settings.Sessions.Observe(manager.onSession)
-	settings.Sockets.Observe(manager.onWebsocket)
+// NewManager creates a user manager
+func NewManager(server Server) (manager *Manager) {
+	manager = &Manager{server: server, cache: NewCache()}
+	server.GetSessionManager().Observe(manager.onSession)
+	server.GetWebsocketManager().Observe(manager.onWebsocket)
 	return
 }
 
@@ -35,7 +35,7 @@ func (m *Manager) onSessionAddUser(name, session string) {
 	m.cache.Set(name, New(name, session))
 }
 func (m *Manager) onSessionRemoveUser(user *T) {
-	m.settings.Sockets.RemoveSessionWebsockets(user.Sockets())
+	m.server.GetWebsocketManager().RemoveSessionWebsockets(user.Sockets())
 	m.cache.Set(user.name, nil)
 	user.close()
 }
@@ -55,7 +55,7 @@ func (m *Manager) onWebsocket(id string, oldSocket, newSocket *websocket.T) {
 
 // Must returns the User and Session from session.Manager.Must
 func (m *Manager) Must(name string) (user *T, session *session.T) {
-	session = m.settings.Sessions.Must(name)
+	session = m.server.GetSessionManager().Must(name)
 	user = m.cache.Get(name)
 	return
 }
@@ -70,7 +70,7 @@ func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
 func (m *Manager) Get(name string) (user *T, session *session.T, err error) {
 	if user = m.cache.Get(name); user == nil {
 		err = ErrExpired
-	} else if session = m.settings.Sessions.Get(user.session); session == nil {
+	} else if session = m.server.GetSessionManager().Get(user.session); session == nil {
 		user, err = nil, ErrSessionSync
 	}
 	return
@@ -78,7 +78,7 @@ func (m *Manager) Get(name string) (user *T, session *session.T, err error) {
 
 // GetSession returns the User and Session for the given sessionID
 func (m *Manager) GetSession(id string) (user *T, session *session.T, err error) {
-	if session = m.settings.Sessions.Get(id); session == nil {
+	if session = m.server.GetSessionManager().Get(id); session == nil {
 		err = ErrExpired
 	} else if user = m.cache.Get(session.Name()); user == nil {
 		session, err = nil, ErrSessionSync
@@ -97,7 +97,7 @@ func (m *Manager) GetSocket(ws *websocket.T) (*T, *session.T, error) {
 
 // GetRequestCookie returns the User and Session
 func (m *Manager) GetRequestCookie(r *http.Request) (user *T, session *session.T, err error) {
-	if session, err = m.settings.Sessions.GetRequestCookie(r); err != nil {
+	if session, err = m.server.GetSessionManager().GetRequestCookie(r); err != nil {
 	} else if user = m.cache.Get(session.Name()); user == nil {
 		session, err = nil, ErrSessionSync
 	}
@@ -107,10 +107,10 @@ func (m *Manager) GetRequestCookie(r *http.Request) (user *T, session *session.T
 // Authorize links a websocket to a [new] user using m.Must
 func (m *Manager) Authorize(name string, ws *websocket.T) (user *T, session *session.T, err error) {
 	if oldUser, _, _ := m.GetSocket(ws); oldUser != nil {
-		m.settings.Sockets.SetSessionID(ws, "")
+		m.server.GetWebsocketManager().SetSessionID(ws, "")
 		oldUser.RemoveSocket(ws.ID())
 	}
-	if user, session = m.Must(name); m.settings.Sockets.SetSessionID(ws, session.ID()) {
+	if user, session = m.Must(name); m.server.GetWebsocketManager().SetSessionID(ws, session.ID()) {
 		user.AddSocket(ws)
 	}
 	return

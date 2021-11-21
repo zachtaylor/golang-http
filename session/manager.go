@@ -18,33 +18,30 @@ func NewManager(settings Settings) (manager *Manager) {
 	return
 }
 
-// ageLimit returns the age limit relative to time.Now()
-func (m *Manager) ageLimit() time.Time { return time.Now().Add(-m.settings.Lifetime) }
-
 // Must refreshes and returns the Session with the given username if one exists, and creates one if necessary
 func (m *Manager) Must(name string) (session *T) {
-	expiry := m.ageLimit()
+	expiry := time.Now()
 	m.cache.mu.Lock()
 	defer m.cache.mu.Unlock()
 	if session = m.getName(name, expiry); session != nil {
-		session.Update()
+		session.time = expiry.Add(m.settings.Lifetime)
 		return
 	}
 	var id string
 	for ok := true; ok; ok = m.get(id, expiry) != nil {
 		id = m.settings.Keygen()
 	}
-	session = New(id, name)
+	session = New(id, name, expiry.Add(m.settings.Lifetime))
 	m.cache.set(id, session)
 	return
 }
 
 // Get returns a Session by ID
-func (m *Manager) Get(id string) *T { return m.get(id, m.ageLimit()) }
+func (m *Manager) Get(id string) *T { return m.get(id, time.Now()) }
 
 // get checks expiry
 func (m *Manager) get(id string, expiry time.Time) (session *T) {
-	if session = m.cache.Get(id); session != nil && session.time.Before(expiry) {
+	if session = m.cache.Get(id); session != nil && session.expired(expiry) {
 		session = nil
 	}
 	return
@@ -52,6 +49,21 @@ func (m *Manager) get(id string, expiry time.Time) (session *T) {
 
 // Count returns the current len of the map
 func (m *Manager) Count() int { return len(m.cache.dat) }
+
+// Update changes the internal expiry time of a Session
+func (m *Manager) Update(session *T) error {
+	m.cache.mu.Lock()
+	defer m.cache.mu.Unlock()
+	if session != m.cache.dat[session.id] {
+		return ErrNoID
+	}
+	now := time.Now()
+	if session.expired(now) {
+		return ErrExpired
+	}
+	session.time = now.Add(m.settings.Lifetime)
+	return nil
+}
 
 // Remove removes a Session
 func (m *Manager) Remove(id string) { m.cache.Set(id, nil) }
@@ -62,7 +74,7 @@ func (m *Manager) Observe(f CacheObserver) { m.cache.Observe(f) }
 // GetName returns Session by username
 func (m *Manager) GetName(name string) (session *T) {
 	m.cache.mu.Lock()
-	session = m.getName(name, m.ageLimit())
+	session = m.getName(name, time.Now())
 	m.cache.mu.Unlock()
 	return
 }
@@ -71,7 +83,7 @@ func (m *Manager) GetName(name string) (session *T) {
 func (m *Manager) getName(name string, expiry time.Time) (session *T) {
 	for _, t := range m.cache.dat {
 		if t.name == name {
-			if t.time.After(expiry) {
+			if !t.expired(expiry) {
 				session = t
 			}
 			break
@@ -109,11 +121,10 @@ func (m *Manager) WriteSetCookie(w http.ResponseWriter, session *T) {
 }
 
 func (m *Manager) collectgarbage() {
-	expiry := m.ageLimit()
-	list := make([]string, 0)
+	expiry, list := time.Now(), make([]string, 0)
 	m.cache.mu.Lock()
 	for k, t := range m.cache.dat {
-		if t.time.Before(expiry) {
+		if t.expired(expiry) {
 			list = append(list, k)
 		}
 	}

@@ -30,6 +30,9 @@ func ListenAndServeTLS(addr string, certFile string, keyFile string, handler Han
 	return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
 }
 
+// Middleware is a consumer type that manipulates Handlers
+type Middleware = func(next Handler) Handler
+
 // Redirect calls http.Redirect
 func Redirect(w http.ResponseWriter, r *http.Request, url string, code int) {
 	http.Redirect(w, r, url, code)

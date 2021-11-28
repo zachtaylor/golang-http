@@ -1,35 +1,41 @@
 package user
 
-import "taylz.io/http/websocket"
+// import (
+// 	"context"
 
-// Writer is an interface for writing data to users
-type Writer interface {
-	// Name returns the unique non-empty username of the client
-	Name() string
-	websocket.Writer
-}
+// 	"taylz.io/http/websocket/message"
+// )
 
-// WriterFunc emulates Writer, but returning any error closes the Writer
-func WriterFunc(name string, f func([]byte) error) Writer {
-	return writerFunc{
-		name: name,
-		ws:   websocket.WriterFunc(f),
-	}
-}
+// // Writer is an interface for writing data to users
+// type Writer interface {
+// 	// Name returns the unique non-empty username of the client
+// 	Name() string
+// 	message.Writer
+// }
 
-type writerFunc struct {
-	name string
-	ws   websocket.Writer
-}
+// // WriterFunc emulates Writer, but returning any error closes the Writer
+// func WriterFunc(name string, f func([]byte) error) Writer {
+// 	return writerFunc{
+// 		name: name,
+// 		ws:   message.WriterFunc(f),
+// 	}
+// }
 
-// Name returns the given name
-func (w writerFunc) Name() string { return w.name }
+// type writerFunc struct {
+// 	name string
+// 	ws   func([]byte) error
+// }
 
-// Done returns the done channel
-func (w writerFunc) Done() <-chan bool { return w.ws.Done() }
+// // Name returns the given name
+// func (w writerFunc) Name() string { return w.name }
 
-// Write calls go WriteSync
-func (w writerFunc) Write(bytes []byte) { w.ws.Write(bytes) }
+// // Done returns the done channel
+// func (w writerFunc) Context() context.Context { return w.ws.Context() }
 
-// WriteSync calls the func
-func (w writerFunc) WriteSync(bytes []byte) { w.ws.WriteSync(bytes) }
+// func (w writerFunc) Subprotocol() string { return w.ws.Subprotocol() }
+
+// // WriteMessagez calls go WriteSync
+// func (w writerFunc) WriteMessage(msg *message.T) { w.ws.WriteMessage(msg) }
+
+// // WriteSync calls the func
+// func (w writerFunc) WriteMessageBytes(bytes []byte) { w.ws.WriteMessageBytes(bytes) }

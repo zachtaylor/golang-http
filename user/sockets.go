@@ -5,44 +5,44 @@ package user
 import (
 	"sync"
 
-	"taylz.io/http/websocket"
+	"taylz.io/http/websocket/message"
 )
 
 // Sockets is an observable concurrent in-memory datastore
 type Sockets struct {
-	dat map[string]*websocket.T
+	dat map[string]message.Writer
 	mu  sync.Mutex
 	obs []SocketsObserver
 }
 
-// SocketsGetter is a func(string)->*websocket.T
-type SocketsGetter = func(string) *websocket.T
+// SocketsGetter is a func(string)->message.Writer
+type SocketsGetter = func(string) message.Writer
 
-// SocketsObserver is a func(string, old*websocket.T, new*websocket.T)
-type SocketsObserver = func(string, *websocket.T, *websocket.T)
+// SocketsObserver is a func(string, oldmessage.Writer, newmessage.Writer)
+type SocketsObserver = func(string, message.Writer, message.Writer)
 
-// SocketsSetter is a func(string,*websocket.T)
-type SocketsSetter = func(string, *websocket.T)
+// SocketsSetter is a func(string,message.Writer)
+type SocketsSetter = func(string, message.Writer)
 
 // NewSockets returns a new Sockets
 func NewSockets() *Sockets {
 	return &Sockets{
-		dat: make(map[string]*websocket.T),
+		dat: make(map[string]message.Writer),
 		obs: make([]SocketsObserver, 0),
 	}
 }
 
-// Get returns the *websocket.T for a string
-func (this *Sockets) Get(k string) *websocket.T { return this.dat[k] }
+// Get returns the message.Writer for a string
+func (this *Sockets) Get(k string) message.Writer { return this.dat[k] }
 
-// Set saves a *websocket.T for a string
-func (this *Sockets) Set(k string, v *websocket.T) {
+// Set saves a message.Writer for a string
+func (this *Sockets) Set(k string, v message.Writer) {
 	this.mu.Lock()
 	this.set(k, v)
 	this.mu.Unlock()
 }
 
-func (this *Sockets) set(k string, v *websocket.T) {
+func (this *Sockets) set(k string, v message.Writer) {
 	old := this.dat[k]
 	if v != nil {
 		this.dat[k] = v
@@ -54,7 +54,7 @@ func (this *Sockets) set(k string, v *websocket.T) {
 	}
 }
 
-// Each calls the func for each string,*websocket.T in this Sockets
+// Each calls the func for each string,message.Writer in this Sockets
 func (this *Sockets) Each(f SocketsSetter) {
 	this.mu.Lock()
 	for k, v := range this.dat {
@@ -81,8 +81,8 @@ func (this *Sockets) Keys() []string {
 	return keys
 }
 
-// Observe adds a func to be called when a *websocket.T is set
+// Observe adds a func to be called when a message.Writer is set
 func (this *Sockets) Observe(f SocketsObserver) { this.obs = append(this.obs, f) }
 
-// Remove deletes a string,*websocket.T
+// Remove deletes a string,message.Writer
 func (this *Sockets) Remove(k string) { this.Set(k, nil) }

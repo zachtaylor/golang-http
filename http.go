@@ -26,12 +26,15 @@ func ListenAndServe(addr string, handler Handler) error {
 }
 
 // ListenAndServe calls http.ListenAndServeTLS
-func ListenAndServeTLS(addr string, certFile string, keyFile string, handler Handler) error {
+func ListenAndServeTLS(addr, certFile, keyFile string, handler Handler) error {
 	return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
 }
 
 // Middleware is a consumer type that manipulates Handlers
 type Middleware = func(next Handler) Handler
+
+// Use returns a Pather from a Pather, applies a middleware wrapper
+func Use(m Middleware, path Pather) Pather { return NewPath(path, m(path)) }
 
 // Redirect calls http.Redirect
 func Redirect(w http.ResponseWriter, r *http.Request, url string, code int) {

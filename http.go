@@ -26,7 +26,7 @@ func ListenAndServe(addr string, handler Handler) error {
 }
 
 // ListenAndServe calls http.ListenAndServeTLS
-func ListenAndServeTLS(addr string, certFile string, keyFile string, handler Handler) error {
+func ListenAndServeTLS(addr, certFile, keyFile string, handler Handler) error {
 	return http.ListenAndServeTLS(addr, certFile, keyFile, handler)
 }
 

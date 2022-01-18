@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	// ErrNoID indicates that no identifying information was provided
-	ErrNoID = errors.New("no sessionid")
+	ErrNoID = errors.New("session: no id")
 	// ErrExpired indicates any referenced session has since expired
-	ErrExpired = errors.New("session expired")
+	ErrExpired = errors.New("session: expired")
 )

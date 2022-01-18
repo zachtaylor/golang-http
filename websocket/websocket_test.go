@@ -7,9 +7,12 @@ import (
 )
 
 func TestMessageJson(t *testing.T) {
-	msg := websocket.NewMessage("xyz", websocket.MsgData{
-		"hello": "world",
-	}).EncodeToJSON()
+	msg := websocket.ShouldMarshal(websocket.Message{
+		URI: "xyz",
+		Data: map[string]interface{}{
+			"hello": "world",
+		},
+	})
 	if string(msg) != `{"uri":"xyz","data":{"hello":"world"}}` {
 		t.Log(string(msg))
 		t.Fail()

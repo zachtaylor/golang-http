@@ -1,116 +1,70 @@
 package websocket // import "taylz.io/http/websocket"
 
 import (
-	"sync"
+	"io"
 
-	"golang.org/x/net/websocket"
+	"taylz.io/http"
 )
-
-// Conn = websocket.Conn
-type Conn = websocket.Conn
-
-// Upgrader = websocket.Handler
-type Upgrader = websocket.Handler
-
-// Send calls the websocket send API
-func Send(conn *Conn, bytes []byte) error { return websocket.Message.Send(conn, bytes) }
-
-// Receive calls the websocket receive API
-func Receive(conn *Conn) (buf string, err error) {
-	err = websocket.Message.Receive(conn, &buf)
-	return
-}
 
 // T is a Websocket
 type T struct {
-	conn    *Conn
-	id      string
-	session string
-	in      <-chan *Message
-	out     chan []byte
-	once    sync.Once
-	done    chan bool
+	req  *http.Request
+	conn *Conn
+	id   string
 }
 
 // New creates a websocket wrapper T
-func New(conn *Conn, id string, sessionID string) *T {
+func New(req *http.Request, conn *Conn, id string) *T {
 	return &T{
-		conn:    conn,
-		id:      id,
-		session: sessionID,
-		in:      newChanMessage(conn),
-		out:     make(chan []byte),
-		done:    make(chan bool),
+		req:  req,
+		conn: conn,
+		id:   id,
 	}
 }
 
 // ID returns the websocket ID
 func (ws *T) ID() string { return ws.id }
 
-// SessionID returns the associated SessionID, if available
-func (ws *T) SessionID() string { return ws.session }
+// Identity implements Writer
+func (ws *T) Identity() (bool, string) { return false, ws.id }
+
+// Request returns the original internal request
+func (ws *T) Request() *http.Request { return ws.req }
 
 // Done returns the done channel
-func (ws *T) Done() <-chan bool { return ws.done }
+func (ws *T) Done() <-chan struct{} { return ws.req.Context().Done() }
 
-// Write starts a goroutine to call WriteSync
-func (ws *T) Write(bytes []byte) { go ws.WriteSync(bytes) }
+// Subprotocol returns the name of the negotiated subprotocol
+func (ws *T) Subprotocol() string { return ws.conn.Subprotocol() }
 
-// WriteSync waits to put a buffer into send queue
-func (ws *T) WriteSync(bytes []byte) { ws.out <- bytes }
+func (ws *T) WriteMessage(msg *Message) error {
+	return ws.Write(MessageText, msg.ShouldMarshal())
+}
 
-// Close closes the done channel, returns success
-func (ws *T) Close() (ok bool) {
-	ws.once.Do(func() {
-		ok = true
-		close(ws.done)
-		close(ws.out)
-	})
+func (ws *T) Write(typ MessageType, buf []byte) error {
+	w, err := ws.Writer(typ)
+	if err != nil {
+		return err
+	}
+	return writeCloseBytes(w, buf)
+}
+
+// Reader exposes the websocket Reader API and must only be called synchronously
+func (ws *T) Reader() (MessageType, io.Reader, error) { return ws.conn.Reader(ws.req.Context()) }
+
+// Writer exposes the websocket API and may be called asynchronously
+func (ws *T) Writer(typ MessageType) (io.WriteCloser, error) {
+	return ws.conn.Writer(ws.req.Context(), typ)
+}
+
+func writeCloseBytes(w io.WriteCloser, buf []byte) (err error) {
+	_, err = w.Write(buf)
+	w.Close()
 	return
 }
 
-// watch starts goroutines for in and out, awaits <-done
-func (ws *T) watch(handler Handler) {
-	go ws.watchin(handler)
-	go ws.watchout()
-	<-ws.done
-}
+// closeRead exposes the websocket Reader API and must only be called synchronously
+func (ws *T) closeRead() { ws.conn.CloseRead(ws.req.Context()) }
 
-// watchout loops over out until done
-func (ws *T) watchout() {
-	for {
-		select {
-		case <-ws.done:
-			go DrainChanBytes(ws.out)
-			return
-		case buff, ok := <-ws.out:
-			if !ok {
-				ws.Close()
-				return
-			}
-			if err := Send(ws.conn, buff); err != nil {
-				go DrainChanBytes(ws.out)
-				ws.Close()
-				return
-			}
-		}
-	}
-}
-
-// watchin loops over in until done
-func (ws *T) watchin(handler Handler) {
-	for {
-		select {
-		case <-ws.done:
-			go drainChanMessage(ws.in)
-			return
-		case msg, ok := <-ws.in:
-			if !ok {
-				ws.Close()
-				return
-			}
-
-			go handler.ServeWS(ws, msg)
-		}
-	}
-}
+// close closes the connection, returns error
+func (ws *T) close(code StatusCode, reason string) error { return ws.conn.Close(code, reason) }

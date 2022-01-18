@@ -2,4 +2,9 @@ module taylz.io/http
 
 go 1.17
 
-require golang.org/x/net v0.0.0-20211116231205-47ca1ff31462
+require (
+	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11
+	nhooyr.io/websocket v1.8.7
+)
+
+require github.com/klauspost/compress v1.14.1 // indirect

@@ -1,10 +1,5 @@
 package user_test
 
-import (
-	"taylz.io/http/user"
-	"taylz.io/http/websocket"
-)
+import "taylz.io/http/user"
 
-func UserIsWebsocketWriter(u *user.T) websocket.Writer { return u }
-
-func UserIsUserWriter(u *user.T) user.Writer { return u }
+func ServiceIsManager(s *user.Service) user.Manager { return s }

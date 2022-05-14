@@ -16,7 +16,7 @@ type Manager interface {
 	// GetWebsocket returns a user by websocket
 	GetWebsocket(*websocket.T) *T
 	// Observe adds a callback CacheObserver
-	Observe(CacheObserver)
+	Observe(Observer)
 	// ReadHTTP returns the User and Session
 	ReadHTTP(*http.Request) (*T, error)
 	// WriteHTTP writes the Set-Cookie header using the session.Manager

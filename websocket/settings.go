@@ -4,7 +4,6 @@ package websocket
 //
 // see also AcceptOptions
 type Settings struct {
-	Keygen               func() string
 	InsecureSkipVerify   bool
 	OriginPatterns       []string
 	CompressionMode      CompressionMode
@@ -12,9 +11,8 @@ type Settings struct {
 }
 
 // NewSettings returns a new Settings
-func NewSettings(keygen func() string, insecureSkipVerify bool, originPatterns []string, compressionMode CompressionMode, compressionThreshold int) Settings {
+func NewSettings(insecureSkipVerify bool, originPatterns []string, compressionMode CompressionMode, compressionThreshold int) Settings {
 	return Settings{
-		Keygen:               keygen,
 		InsecureSkipVerify:   insecureSkipVerify,
 		OriginPatterns:       originPatterns,
 		CompressionMode:      compressionMode,

@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"io"
 	"time"
 )
@@ -27,6 +28,17 @@ type MessageDecoderFunc func(io.Reader) (*Message, error)
 
 // DecodeMessage implements MessageDecoder calls f
 func (f MessageDecoderFunc) DecodeMessage(r io.Reader) (*Message, error) { return f(r) }
+
+// DefaultMessageDecoder returns the stdlib implementation of MessageDecoder
+func DefaultMessageDecoder() MessageDecoder {
+	return MessageDecoderFunc(func(r io.Reader) (*Message, error) {
+		msg := Message{}
+		if err := json.NewDecoder(r).Decode(&msg); err != nil {
+			return nil, err
+		}
+		return &msg, nil
+	})
+}
 
 // MesssageEncoder is a header for formatting io.Writer
 type MessageEncoder interface {

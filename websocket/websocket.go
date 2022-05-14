@@ -25,9 +25,6 @@ func New(req *http.Request, conn *Conn, id string) *T {
 // ID returns the websocket ID
 func (ws *T) ID() string { return ws.id }
 
-// Identity implements Writer
-func (ws *T) Identity() (bool, string) { return false, ws.id }
-
 // Request returns the original internal request
 func (ws *T) Request() *http.Request { return ws.req }
 

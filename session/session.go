@@ -11,7 +11,7 @@ type T struct {
 
 // New creates a session
 func New(id, name string, time time.Time) *T {
-	return &T{id: id, name: name, time: time}
+	return &T{time: time, id: id, name: name}
 }
 
 // ID returns the SessionID

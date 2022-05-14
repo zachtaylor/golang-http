@@ -10,29 +10,33 @@ type Service struct {
 	sessions session.Manager
 	wsockets *websocket.Cache
 	cache    *Cache
-	qwsid    map[string]string
+	ws_user  map[string]string
 }
 
-func NewServiceHandler(settings Settings, sessions session.Manager, wsHandler websocket.MessageHandler) (*Service, http.Handler) {
-	wsockets, upgrader := websocket.NewCacheHandler(settings.Websocket, websocket.MessageProtocol(settings.ReadSpeedLimit, nil, wsHandler))
+func NewServiceHandler(settings Settings, keygen func() string, sessions session.Manager, wsHandler websocket.MessageHandler) (*Service, http.Handler) {
+	wsCache, wsUpgrader := websocket.NewCacheHandler(
+		settings.Websocket,
+		keygen,
+		websocket.MessageProtocol(settings.ReadSpeedLimit, websocket.DefaultMessageDecoder(), wsHandler),
+	)
 	service := &Service{
 		sessions: sessions,
-		wsockets: wsockets,
+		wsockets: wsCache,
 		cache:    NewCache(),
-		qwsid:    make(map[string]string),
+		ws_user:  make(map[string]string),
 	}
 	sessions.Observe(onSession(service))
-	wsockets.Observe(onWebsocket(service))
-	return service, upgrader
+	wsCache.Observe(onWebsocket(service))
+	return service, wsUpgrader
 }
 
-func (s *Service) Count() int { return len(s.cache.dat) }
+func (s *Service) Count() int { return s.cache.Count() }
 
-func (s *Service) Get(username string) *T { return s.cache.dat[username] }
+func (s *Service) Get(username string) *T { return s.cache.Get(username) }
 
 func (s *Service) Must(ws *websocket.T, username string) (user *T) {
-	if curUser, ok := s.qwsid[ws.ID()]; ok {
-		delete(s.qwsid, ws.ID())
+	if curUser, ok := s.ws_user[ws.ID()]; ok {
+		delete(s.ws_user, ws.ID())
 		if u := s.Get(curUser); u != nil {
 			u.RemoveSocket(ws)
 		}
@@ -40,18 +44,18 @@ func (s *Service) Must(ws *websocket.T, username string) (user *T) {
 	s.sessions.Must(username)
 	user = s.Get(username)
 	user.AddSocket(ws)
-	s.qwsid[ws.ID()] = username
+	s.ws_user[ws.ID()] = username
 	return
 }
 
 func (s *Service) GetWebsocket(ws *websocket.T) (user *T) {
-	if username := s.qwsid[ws.ID()]; username != "" {
-		user = s.Get(username)
+	if username := s.ws_user[ws.ID()]; username != "" {
+		user = s.cache.Get(username)
 	}
 	return
 }
 
-func (s *Service) Observe(f CacheObserver) { s.cache.Observe(f) }
+func (s *Service) Observe(f Observer) { s.cache.Observe(f) }
 
 func (s *Service) ReadHTTP(r *http.Request) (user *T, err error) {
 	if session, serr := s.sessions.ReadHTTP(r); session == nil {

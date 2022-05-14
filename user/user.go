@@ -5,26 +5,25 @@ import (
 
 	"taylz.io/http/session"
 	"taylz.io/http/websocket"
+	"taylz.io/yas"
 )
 
 // T is a user, bridges session and websocket
 type T struct {
 	session *session.T
-	wsocks  map[*websocket.T]struct{}
-	wsmu    sync.Mutex
+	ws      yas.Set[*websocket.T]
+	sync    sync.Mutex
 	done    chan struct{}
 	expired bool
 }
 
 // New creates a user
 func New(session *session.T) (user *T) {
-	user = &T{
+	return &T{
 		session: session,
-		wsocks:  make(map[*websocket.T]struct{}),
+		ws:      yas.NewSet[*websocket.T](),
 		done:    make(chan struct{}),
 	}
-	go user.watch()
-	return
 }
 
 // Name returns the session name
@@ -43,31 +42,20 @@ func (t *T) Sockets() (sockets []*websocket.T) {
 	if t == nil || t.expired {
 		return
 	}
-	t.wsmu.Lock()
-	sockets = t.asyncSockets()
-	t.wsmu.Unlock()
+	t.sync.Lock()
+	sockets = t.ws.Slice()
+	t.sync.Unlock()
 	return
 }
-
-func (t *T) asyncSockets() []*websocket.T {
-	i, sockets := 0, make([]*websocket.T, len(t.wsocks))
-	for ws := range t.wsocks {
-		sockets[i] = ws
-		i++
-	}
-	return sockets
-}
-
-var wsFound = struct{}{}
 
 // AddSocket adds a socket id to the user
 func (t *T) AddSocket(ws *websocket.T) {
 	if t == nil || t.expired {
 		return
 	}
-	t.wsmu.Lock()
-	t.wsocks[ws] = wsFound
-	t.wsmu.Unlock()
+	t.sync.Lock()
+	t.ws.Add(ws)
+	t.sync.Unlock()
 }
 
 // RemoveSocket removes a socket id from the user
@@ -75,12 +63,12 @@ func (t *T) RemoveSocket(ws *websocket.T) {
 	if t == nil || t.expired {
 		return
 	}
-	t.wsmu.Lock()
-	delete(t.wsocks, ws)
-	t.wsmu.Unlock()
+	t.sync.Lock()
+	t.ws.Remove(ws)
+	t.sync.Unlock()
 }
 
-func (t *T) WriteMessage(msg *websocket.Message) error {
+func (t *T) WriteMessage(msg websocket.Message) error {
 	return t.Write(websocket.MessageText, msg.ShouldMarshal())
 }
 
@@ -97,18 +85,8 @@ func (t *T) Write(typ websocket.MessageType, data []byte) (err error) {
 			err = nil
 		}
 	}
-	t.wsmu.Lock()
 	for _, ws := range remove {
-		delete(t.wsocks, ws)
+		t.ws.Remove(ws)
 	}
-	t.wsmu.Unlock()
 	return
-}
-
-func (t *T) watch() {
-	<-t.done
-	t.wsmu.Lock()
-	t.expired = true
-	t.wsocks = nil
-	t.wsmu.Unlock()
 }

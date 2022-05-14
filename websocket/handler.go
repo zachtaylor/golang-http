@@ -3,7 +3,7 @@ package websocket
 import "taylz.io/http"
 
 // NewCacheHandler creates *Cache and http.Handler
-func NewCacheHandler(settings Settings, protocol Protocol) (*Cache, http.Handler) {
+func NewCacheHandler(settings Settings, keygen func() string, protocol Protocol) (*Cache, http.Handler) {
 	cache := NewCache()
 	acceptOptions := &AcceptOptions{
 		Subprotocols:         protocol.GetSubprotocols(),
@@ -19,19 +19,17 @@ func NewCacheHandler(settings Settings, protocol Protocol) (*Cache, http.Handler
 		} else if f := protocol.GetSubprotocol(conn.Subprotocol()); f == nil {
 			conn.Close(StatusNormalClosure, `unknown subprotocol: "`+conn.Subprotocol()+`"`)
 		} else {
-			SandboxSubprotocol(f, save(cache, r, conn, settings.Keygen))
+			SandboxSubprotocol(f, save(cache, keygen, r, conn))
 		}
 	})
 }
 
-func save(cache *Cache, r *http.Request, conn *Conn, keygen func() string) (ws *T) {
+func save(cache *Cache, keygen func() string, r *http.Request, conn *Conn) (ws *T) {
 	var id string
-	cache.mu.Lock()
-	for id == "" || cache.dat[id] != nil {
+	for ok := true; ok; ok = (cache.Get(id) != nil) {
 		id = keygen()
 	}
 	ws = New(r, conn, id)
-	cache.set(id, ws)
-	cache.mu.Unlock()
+	cache.Set(id, ws)
 	return
 }

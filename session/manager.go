@@ -12,8 +12,8 @@ type Manager interface {
 	Get(id string) *T
 	// Must refreshes and returns the Session with the given username if one exists, and creates one if necessary
 	Must(name string) *T
-	// Observe adds a CacheObserver
-	Observe(CacheObserver)
+	// Observe adds an Observer
+	Observe(Observer)
 	// Update changes the internal expiry time of a Session
 	Update(id string) error
 	// Remove removes a Session

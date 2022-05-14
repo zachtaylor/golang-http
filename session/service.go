@@ -47,9 +47,9 @@ func (s *Service) Get(id string) *T { return s.cache.Get(id) }
 func (s *Service) Count() int { return s.cache.Count() }
 
 // Update changes the internal expiry time of a Session
-func (s *Service) Update(sessionID string) (err error) {
+func (s *Service) Update(id string) (err error) {
 	s.cache.Sync(func() {
-		if session := s.Get(sessionID); session == nil {
+		if session := s.Get(id); session == nil {
 			err = ErrExpired
 		} else {
 			session.time = time.Now().Add(s.Lifetime)

@@ -29,6 +29,9 @@ func New(session *session.T) (user *T) {
 // Name returns the session name
 func (t *T) Name() string { return t.session.Name() }
 
+// Session returns the session id
+func (t *T) Session() string { return t.session.ID() }
+
 // Done returns the done channel for user
 func (t *T) Done() <-chan struct{} {
 	if t == nil || t.expired {
@@ -79,7 +82,7 @@ func (t *T) Write(typ websocket.MessageType, data []byte) (err error) {
 	remove := []*websocket.T{}
 	err = ErrMissingConn
 	for _, ws := range t.Sockets() {
-		if ws.Write(typ, data) != nil { // erases err
+		if ws.Write(typ, data) != nil { // write err removes conn
 			remove = append(remove, ws)
 		} else {
 			err = nil

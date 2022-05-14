@@ -57,11 +57,11 @@ func (s *Service) GetWebsocket(ws *websocket.T) (user *T) {
 
 func (s *Service) Observe(f Observer) { s.cache.Observe(f) }
 
-func (s *Service) ReadHTTP(r *http.Request) (user *T, err error) {
-	if session, serr := s.sessions.ReadHTTP(r); session == nil {
-		err = serr
-	} else if user = s.Get(session.Name()); user == nil {
-		err = ErrSessionSync
+func (s *Service) ReadHTTP(r *http.Request) (user *T, session *session.T, err error) {
+	if session, err = s.sessions.ReadHTTP(r); session != nil {
+		if user = s.Get(session.Name()); user == nil {
+			err = ErrSessionSync
+		}
 	}
 	return
 }

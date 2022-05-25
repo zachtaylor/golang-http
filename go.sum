@@ -61,5 +61,5 @@ gopkg.in/yaml.v2 v2.2.8 h1:obN1ZagJSUGI0Ek/LBmuj4SNLPfIny3KsKFopxRdj10=
 gopkg.in/yaml.v2 v2.2.8/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 nhooyr.io/websocket v1.8.7 h1:usjR2uOr/zjjkVMy0lW+PPohFok7PCow5sDjLgX4P4g=
 nhooyr.io/websocket v1.8.7/go.mod h1:B70DZP8IakI65RVQ51MsWP/8jndNma26DVA/nFSCgW0=
-taylz.io/yas v0.0.0-20220514174646-ac4c672d0b37 h1:DlE9U0OxaQ/28CManywHvPm8sr8fGqepCJDa9O+H2cg=
-taylz.io/yas v0.0.0-20220514174646-ac4c672d0b37/go.mod h1:CjG9IV8n8ENTaQ3cai9uAL7kf5JTWFZXG1poQuQDMEY=
+taylz.io/yas v0.0.0-20220525050000-1cecadaf690e h1:RmwT7DGhu4SAL+mh+QxIXs9oeejPzdgNPoDFRLFHCaU=
+taylz.io/yas v0.0.0-20220525050000-1cecadaf690e/go.mod h1:CjG9IV8n8ENTaQ3cai9uAL7kf5JTWFZXG1poQuQDMEY=

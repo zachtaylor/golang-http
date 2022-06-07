@@ -13,7 +13,12 @@ type Service struct {
 	ws_user  map[string]string
 }
 
-func NewServiceHandler(settings Settings, keygen func() string, sessions session.Manager, wsHandler websocket.MessageHandler) (*Service, http.Handler) {
+func NewServiceHandler(
+	settings Settings,
+	keygen func() string,
+	sessions session.Manager,
+	wsHandler websocket.MessageHandler,
+) (*Service, *websocket.Cache, http.Handler) {
 	wsCache, wsUpgrader := websocket.NewCacheHandler(
 		settings.Websocket,
 		keygen,
@@ -27,7 +32,7 @@ func NewServiceHandler(settings Settings, keygen func() string, sessions session
 	}
 	sessions.Observe(onSession(service))
 	wsCache.Observe(onWebsocket(service))
-	return service, wsUpgrader
+	return service, wsCache, wsUpgrader
 }
 
 func (s *Service) Count() int { return s.cache.Count() }
@@ -66,6 +71,4 @@ func (s *Service) ReadHTTP(r *http.Request) (user *T, session *session.T, err er
 	return
 }
 
-func (s *Service) WriteHTTP(w http.ResponseWriter, user *T) error {
-	return s.sessions.WriterHTTP(w, user.session)
-}
+func (s *Service) WriteHTTP(w http.ResponseWriter, user *T) { s.sessions.WriterHTTP(w, user.session) }

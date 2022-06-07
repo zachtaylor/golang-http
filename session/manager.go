@@ -48,5 +48,5 @@ func ContextReader() Reader {
 // type Writer is an interface for writing Sessions to http.ResponseWriter
 type Writer interface {
 	// WriteCookie writes the Set-Cookie header in http.ResponseWriter
-	WriterHTTP(http.ResponseWriter, *T) error
+	WriterHTTP(http.ResponseWriter, *T)
 }

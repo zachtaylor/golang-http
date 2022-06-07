@@ -21,5 +21,5 @@ type Manager interface {
 	// ReadHTTP returns the User and Session
 	ReadHTTP(*http.Request) (*T, *session.T, error)
 	// WriteHTTP writes the Set-Cookie header using the session.Manager
-	WriteHTTP(http.ResponseWriter, *T) error
+	WriteHTTP(http.ResponseWriter, *T)
 }

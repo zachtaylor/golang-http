@@ -2,7 +2,6 @@ package user
 
 import (
 	"taylz.io/http"
-	"taylz.io/http/session"
 	"taylz.io/http/websocket"
 )
 
@@ -19,7 +18,7 @@ type Manager interface {
 	// Observe adds a callback CacheObserver
 	Observe(Observer)
 	// ReadHTTP returns the User and Session
-	ReadHTTP(*http.Request) (*T, *session.T, error)
+	ReadHTTP(*http.Request) (*T, error)
 	// WriteHTTP writes the Set-Cookie header using the session.Manager
 	WriteHTTP(http.ResponseWriter, *T)
 }

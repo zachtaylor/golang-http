@@ -62,13 +62,13 @@ func (s *Service) GetWebsocket(ws *websocket.T) (user *T) {
 
 func (s *Service) Observe(f Observer) { s.cache.Observe(f) }
 
-func (s *Service) ReadHTTP(r *http.Request) (user *T, session *session.T, err error) {
-	if session, err = s.sessions.ReadHTTP(r); session != nil {
-		if user = s.Get(session.Name()); user == nil {
-			err = ErrSessionSync
-		}
+func (s *Service) ReadHTTP(r *http.Request) (*T, error) {
+	if session, err := s.sessions.ReadHTTP(r); session == nil {
+		return nil, err
+	} else if user := s.Get(session.Name()); user != nil {
+		return user, nil
 	}
-	return
+	return nil, ErrSessionSync
 }
 
 func (s *Service) WriteHTTP(w http.ResponseWriter, user *T) { s.sessions.WriterHTTP(w, user.session) }

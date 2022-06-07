@@ -26,11 +26,8 @@ func New(session *session.T) (user *T) {
 	}
 }
 
-// Name returns the session name
-func (t *T) Name() string { return t.session.Name() }
-
 // Session returns the session id
-func (t *T) Session() string { return t.session.ID() }
+func (t *T) Session() *session.T { return t.session }
 
 // Done returns the done channel for user
 func (t *T) Done() <-chan struct{} {

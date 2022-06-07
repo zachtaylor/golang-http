@@ -38,6 +38,10 @@ func (ws *T) WriteMessage(msg *Message) error {
 	return ws.Write(MessageText, msg.ShouldMarshal())
 }
 
+func (ws *T) WriteText(buf []byte) error { return ws.Write(MessageText, buf) }
+
+func (ws *T) WriteBinary(buf []byte) error { return ws.Write(MessageBinary, buf) }
+
 func (ws *T) Write(typ MessageType, buf []byte) error {
 	w, err := ws.Writer(typ)
 	if err != nil {

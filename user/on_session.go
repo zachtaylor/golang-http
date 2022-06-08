@@ -3,7 +3,7 @@ package user
 import "taylz.io/http/session"
 
 func onSession(s *Service) session.Observer {
-	return session.ObserverFunc(func(sessionID string, oldSession, newSession *session.T) {
+	return session.ObserverFunc(func(sessionID string, newSession, oldSession *session.T) {
 		if newSession == nil && oldSession != nil {
 			go onSessionRemoveUser(s, oldSession.Name())
 		} else if newSession != nil && oldSession == nil {

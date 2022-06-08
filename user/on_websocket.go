@@ -3,7 +3,7 @@ package user
 import "taylz.io/http/websocket"
 
 func onWebsocket(service *Service) websocket.Observer {
-	return websocket.ObserverFunc(func(websocketID string, oldWS, newWS *websocket.T) {
+	return websocket.ObserverFunc(func(websocketID string, newWS, oldWS *websocket.T) {
 		if newWS == nil && oldWS != nil {
 			go onWebsocketRemoveLink(service, oldWS)
 		} else if newWS != nil && oldWS == nil {

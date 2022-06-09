@@ -19,7 +19,9 @@ func NewCacheHandler(settings Settings, keygen func() string, protocol Protocol)
 		} else if f := protocol.GetSubprotocol(conn.Subprotocol()); f == nil {
 			conn.Close(StatusNormalClosure, `unknown subprotocol: "`+conn.Subprotocol()+`"`)
 		} else {
-			SandboxSubprotocol(f, save(cache, keygen, r, conn))
+			ws := save(cache, keygen, r, conn)
+			SandboxSubprotocol(f, ws)
+			cache.Remove(ws.id)
 		}
 	})
 }

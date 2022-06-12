@@ -14,11 +14,11 @@ func onSession(s *Service) session.Observer {
 
 func onSessionRemoveUser(s *Service, username string) {
 	if user := s.Get(username); user != nil {
-		user.expired = true
 		for _, ws := range user.ws.Slice() {
 			delete(s.ws_user, ws.ID())
 		}
 		s.cache.Remove(username)
+		user.expired = true
 		close(user.done)
 	}
 }

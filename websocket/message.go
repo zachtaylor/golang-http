@@ -159,7 +159,7 @@ func MessageFramer(decoder MessageDecoder, handler MessageHandler) Framer {
 		} else if msg, err := decoder.DecodeMessage(r); err != nil {
 			return err
 		} else {
-			handler.ServeWS(ws, msg)
+			go handler.ServeWS(ws, msg)
 			return nil
 		}
 	}

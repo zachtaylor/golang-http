@@ -23,6 +23,8 @@ const (
 	StatusNotFound = http.StatusNotFound
 	// StatusMethodNotAllowed = 405
 	StatusMethodNotAllowed = http.StatusMethodNotAllowed
+	// StatusConflict = 409
+	StatusConflict = http.StatusConflict
 	// StatusPreconditionFailed = 412
 	StatusPreconditionFailed = http.StatusPreconditionFailed
 	// StatusRequestedRangeNotSatisfiable = 416

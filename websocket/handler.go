@@ -19,19 +19,14 @@ func NewCacheHandler(settings Settings, keygen func() string, protocol Protocol)
 		} else if f := protocol.GetSubprotocol(conn.Subprotocol()); f == nil {
 			conn.Close(StatusNormalClosure, `unknown subprotocol: "`+conn.Subprotocol()+`"`)
 		} else {
-			ws := save(cache, keygen, r, conn)
+			var id string
+			for ok := true; ok; ok = (cache.Get(id) != nil) {
+				id = keygen()
+			}
+			ws := New(r, conn, id)
+			cache.Set(id, ws)
 			SandboxSubprotocol(f, ws)
 			cache.Remove(ws.id)
 		}
 	})
-}
-
-func save(cache *Cache, keygen func() string, r *http.Request, conn *Conn) (ws *T) {
-	var id string
-	for ok := true; ok; ok = (cache.Get(id) != nil) {
-		id = keygen()
-	}
-	ws = New(r, conn, id)
-	cache.Set(id, ws)
-	return
 }

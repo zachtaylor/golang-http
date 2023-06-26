@@ -2,7 +2,7 @@ package http // import "taylz.io/http"
 
 import "net/http"
 
-// Cookie =  http.Cookie
+// Cookie = http.Cookie
 type Cookie = http.Cookie
 
 // Dir = http.Dir
@@ -20,6 +20,9 @@ type Handler = http.Handler
 // HandlerFunc = http.HandlerFunc
 type HandlerFunc = http.HandlerFunc
 
+// F_Handler is a func alias
+type F_Handler = func(ResponseWriter, *Request)
+
 // ListenAndServe calls http.ListenAndServe
 func ListenAndServe(addr string, handler Handler) error {
 	return http.ListenAndServe(addr, handler)
@@ -33,8 +36,20 @@ func ListenAndServeTLS(addr, certFile, keyFile string, handler Handler) error {
 // Middleware is a consumer type that manipulates Handlers
 type Middleware = func(next Handler) Handler
 
+func Use(h Handler, m ...Middleware) Handler { return Using(m, h) }
+
+func Using(mh []Middleware, h Handler) Handler {
+	if len(mh) < 1 {
+		return h
+	}
+	for i := len(mh) - 1; i >= 0; i-- {
+		h = mh[i](h)
+	}
+	return h
+}
+
 // Redirect calls http.Redirect
-func Redirect(w http.ResponseWriter, r *http.Request, url string, code int) {
+func Redirect(w ResponseWriter, r *Request, url string, code int) {
 	http.Redirect(w, r, url, code)
 }
 
@@ -43,15 +58,6 @@ type Request = http.Request
 
 // ResponseWriter = http.ResponseWriter
 type ResponseWriter = http.ResponseWriter
-
-// Router is an routing interface
-type Router interface{ RouteHTTP(*http.Request) bool }
-
-// Pather is a Router and Handler
-type Pather interface {
-	Router
-	Handler
-}
 
 // Path is a struct with Router and Handler pointers
 type Path struct {
@@ -62,34 +68,42 @@ type Path struct {
 // NewPath creates a Path
 func NewPath(router Router, handler Handler) Path { return Path{Router: router, Handler: handler} }
 
+func NewPathFunc(router Router, f F_Handler) Path { return NewPath(router, HandlerFunc(f)) }
+
 // RouteHTTP implements Router by calling calling the internal Router
 func (p Path) RouteHTTP(r *Request) bool { return p.Router.RouteHTTP(r) }
 
 // ServeHTTP implements Handler by calling calling the internal Handler
 func (p Path) ServeHTTP(w ResponseWriter, r *Request) { p.Handler.ServeHTTP(w, r) }
 
-// Fork is a Pather made of []Pather
-type Fork []Pather
-
-// NewFork creates a Fork
-func NewFork() *Fork { return &Fork{} }
-
-// Add appends a Pather to this Fork
-func (f *Fork) Add(p Pather) { *f = append(*f, p) }
-
-// Path calls Add with a new Path
-func (f *Fork) Path(r Router, h Handler) { f.Add(Path{Router: r, Handler: h}) }
-
-// ServeHTTP implements Handler by pathing to a branch
-func (f *Fork) ServeHTTP(w ResponseWriter, r *Request) {
-	var h Handler
-	for _, p := range *f {
-		if p.RouteHTTP(r) {
-			h = p
-			break
-		}
+func RealClientAddr(r *http.Request) string {
+	if realIp := r.Header.Get("X-Real-Ip"); realIp != "" {
+		return realIp
+	} else if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
+		return forwardedFor
 	}
-	if h != nil {
-		h.ServeHTTP(w, r)
+	return r.RemoteAddr
+}
+
+// Error is an error with a status code
+type Error interface {
+	error
+	StatusCode() int
+}
+
+// StatusError creates an Error with status code
+func StatusError(code int, err string) statusError {
+	return statusError{
+		code: code,
+		err:  err,
 	}
 }
+
+type statusError struct {
+	code int
+	err  string
+}
+
+func (err statusError) Error() string { return err.err }
+
+func (err statusError) StatusCode() int { return err.code }

@@ -1,13 +1,14 @@
 package websocket_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"taylz.io/http/websocket"
 )
 
 func TestMessageJson(t *testing.T) {
-	msg := websocket.ShouldMarshal(websocket.Message{
+	msg, _ := json.Marshal(websocket.Message{
 		URI: "xyz",
 		Data: map[string]interface{}{
 			"hello": "world",

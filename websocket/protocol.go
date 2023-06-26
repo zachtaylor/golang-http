@@ -2,7 +2,8 @@ package websocket
 
 import (
 	"io"
-	"time"
+
+	"taylz.io/maps"
 )
 
 // Protocol is an interface for acquiring Subprotocol
@@ -20,28 +21,25 @@ type Subprotocol = func(*T) error
 // Framer is a func type for websocket connection handler
 type Framer = func(*T, MessageType, io.Reader) error
 
+type FramerMiddleware = func(Framer) Framer
+
 // NewSubprotocol creates a frame-based read-limited Subprotocol
-func NewSubprotocol(interval time.Duration, f Framer) Subprotocol {
+func NewSubprotocol(f Framer) Subprotocol {
 	return func(ws *T) error {
-		limit := NewLimiter(NewLimit(interval), 3)
 		for {
-			if !limit.Allow() {
-				subprotocolClose(ws, ErrTooFast)
-				return nil
-			}
 			if typ, r, err := ws.Reader(); err != nil {
 				return err
-			} else if err = f(ws, typ, r); err == ErrDataType {
-				subprotocolClose(ws, ErrDataType)
+			} else if err = f(ws, typ, r); err != nil {
+				subprotocolClose(ws, err)
 				return nil
 			}
 		}
 	}
 }
 
-func subprotocolClose(ws *T, err Error) {
+func subprotocolClose(ws *T, err error) {
 	ws.closeRead()
-	ws.close(err.StatusCode(), err.Error())
+	ws.close(closingCodeMessage(err))
 }
 
 // ProtocolFunc is a quick-n-dirty Protocol that is only 1 Subprotocol
@@ -62,17 +60,7 @@ func (f ProtocolFunc) GetSubprotocol(name string) Subprotocol {
 type SubprotocolMap map[string]Subprotocol
 
 // GetSubprotocols implements Protocol
-func (m SubprotocolMap) GetSubprotocols() []string { return subprotocolMapKeys(m) }
+func (m SubprotocolMap) GetSubprotocols() []string { return maps.Keys(m) }
 
 // GetSubprotocol implements Protocol
 func (m SubprotocolMap) GetSubprotocol(name string) Subprotocol { return m[name] }
-
-// subprotocolMapKeys returns map keys from typed map
-func subprotocolMapKeys(m map[string]Subprotocol) []string {
-	i, keys := 0, make([]string, len(m))
-	for name := range m {
-		keys[i] = name
-		i++
-	}
-	return keys
-}

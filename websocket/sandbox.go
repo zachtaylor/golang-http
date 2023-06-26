@@ -15,3 +15,13 @@ func SandboxSubprotocol(f Subprotocol, ws *T) {
 		ws.close(StatusNormalClosure, "done")
 	}
 }
+
+// SandboxSubprotocol runs a MessageHandler to completion
+func SandboxMessageHandler(ws *T, h Handler, msg *Message) {
+	defer func() {
+		if r := recover(); r != nil {
+			ws.close(StatusAbnormalClosure, fmt.Sprint(r))
+		}
+	}()
+	h.ServeWS(ws, msg)
+}

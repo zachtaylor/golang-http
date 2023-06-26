@@ -23,6 +23,8 @@ func (t *T) Name() string { return t.name }
 // Expires returns the time this session expires
 func (t *T) Expires() time.Time { return t.time }
 
+// SetExpires updates the time this session expires
+func (t *T) SetExpires(time time.Time) { t.time = time }
+
 // Expired returns t.Expires().Before(time.Now())
-func (t *T) Expired() bool              { return t.expired(time.Now()) }
-func (t *T) expired(now time.Time) bool { return t.time.Before(now) }
+func (t *T) Expired() bool { return t.time.Before(time.Now()) }

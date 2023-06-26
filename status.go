@@ -29,6 +29,8 @@ const (
 	StatusPreconditionFailed = http.StatusPreconditionFailed
 	// StatusRequestedRangeNotSatisfiable = 416
 	StatusRequestedRangeNotSatisfiable = http.StatusRequestedRangeNotSatisfiable
+	// StatusTooManyRequests = 429
+	StatusTooManyRequests = http.StatusTooManyRequests
 	// StatusInternalServerError = 500
 	StatusInternalServerError = http.StatusInternalServerError
 )

@@ -2,31 +2,34 @@ package router
 
 import "taylz.io/http"
 
-type method string
+// MethodCONNECT is a http.Router that returns if Request.Method is CONNECT
+var MethodCONNECT = http.RouteMethod("CONNECT")
+var MethodMiddlewareCONNECT = http.RouterMiddlewareFunc(MethodCONNECT)
 
-// RouteHTTP implements http.Router by matching Request.Method
-func (method method) RouteHTTP(r *http.Request) bool { return string(method) == r.Method }
+// MethodDELETE is a http.Router that returns if Request.Method is DELETE
+var MethodDELETE = http.RouteMethod("DELETE")
+var MethodMiddlewareDELETE = http.RouterMiddlewareFunc(MethodDELETE)
 
-// CONNECT is a http.Router that returns if Request.Method is CONNECT
-var CONNECT = method("CONNECT")
+// MethodGET is a http.Router that returns if Request.Method is GET
+var MethodGET = http.RouteMethod("GET")
+var MethodMiddlewareGET = http.RouterMiddlewareFunc(MethodGET)
 
-// DELETE is a http.Router that returns if Request.Method is DELETE
-var DELETE = method("DELETE")
+// MethodHEAD is a http.Router that returns if Request.Method is HEAD
+var MethodHEAD = http.RouteMethod("HEAD")
+var MethodMiddlewareHEAD = http.RouterMiddlewareFunc(MethodHEAD)
 
-// GET is a http.Router that returns if Request.Method is GET
-var GET = method("GET")
+// MethodOPTIONS is a http.Router that returns if Request.Method is OPTIONS
+var MethodOPTIONS = http.RouteMethod("OPTIONS")
+var MethodMiddlewareOPTIONS = http.RouterMiddlewareFunc(MethodOPTIONS)
 
-// HEAD is a http.Router that returns if Request.Method is HEAD
-var HEAD = method("HEAD")
+// MethodPOST is a http.Router that returns if Request.Method is POST
+var MethodPOST = http.RouteMethod("POST")
+var MethodMiddlewarePOST = http.RouterMiddlewareFunc(MethodPOST)
 
-// OPTIONS is a http.Router that returns if Request.Method is OPTIONS
-var OPTIONS = method("OPTIONS")
+// MethodPUT is a http.Router that returns if Request.Method is PUT
+var MethodPUT = http.RouteMethod("PUT")
+var MethodMiddlewarePUT = http.RouterMiddlewareFunc(MethodPUT)
 
-// POST is a http.Router that returns if Request.Method is POST
-var POST = method("POST")
-
-// PUT is a http.Router that returns if Request.Method is PUT
-var PUT = method("PUT")
-
-// TRACE is a http.Router that returns if Request.Method is TRACE
-var TRACE = method("TRACE")
+// MethodTRACE is a http.Router that returns if Request.Method is TRACE
+var MethodTRACE = http.RouteMethod("TRACE")
+var MethodMiddlewareTRACE = http.RouterMiddlewareFunc(MethodTRACE)

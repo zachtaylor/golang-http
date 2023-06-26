@@ -1,52 +1,25 @@
 package session
 
-import "taylz.io/http"
+import "taylz.io/maps"
 
 // Manager is an interface for dealing with sessions
 type Manager interface {
-	Reader
-	Writer
-	// Count returns the current len of the map
-	Count() int
+	HTTPReader
+	HTTPWriter
+	// Size returns the current len of the map
+	Size() int
 	// Get returns a Session by ID
 	Get(id string) *T
 	// Must refreshes and returns the Session with the given username if one exists, and creates one if necessary
 	Must(name string) *T
 	// Observe adds an Observer
 	Observe(Observer)
-	// Update changes the internal expiry time of a Session
+	// Update resets the internal expiry time of a Session
 	Update(id string) error
-	// Remove removes a Session
-	Remove(id string)
+	// Delete removes a Session
+	Delete(id string)
 }
 
-// type Reader is an interface for recognizing Sessions in http.Request
-type Reader interface {
-	// ReadHTTP returns Session by *http.Request
-	ReadHTTP(*http.Request) (*T, error)
-}
+type Observer = maps.Observer[string, *T]
 
-type ReaderFunc func(*http.Request) (*T, error)
-
-func (f ReaderFunc) ReadHTTP(r *http.Request) (*T, error) { return f(r) }
-
-func ContextReader() Reader {
-	return ReaderFunc(func(r *http.Request) (t *T, err error) {
-		if session, ok := FromContext(r.Context()); ok {
-			if session == nil {
-				err = ErrExpired
-			} else {
-				t = session
-			}
-		} else {
-			err = ErrNoID
-		}
-		return
-	})
-}
-
-// type Writer is an interface for writing Sessions to http.ResponseWriter
-type Writer interface {
-	// WriteCookie writes the Set-Cookie header in http.ResponseWriter
-	WriterHTTP(http.ResponseWriter, *T)
-}
+type ObserverFunc = maps.ObserverFunc[string, *T]

@@ -1,4 +1,4 @@
-package security // import "taylz.io/http/hash"
+package security // import "taylz.io/http/security"
 
 import "crypto/md5"
 

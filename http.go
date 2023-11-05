@@ -111,9 +111,7 @@ func PathRouterMiddleware(path string) RouterMiddleware {
 }
 
 // Redirect calls http.Redirect
-func Redirect(w Writer, r *Request, url string, code int) {
-	http.Redirect(w, r, url, code)
-}
+func Redirect(w Writer, r *Request, url string, code int) { http.Redirect(w, r, url, code) }
 
 // Request = http.Request
 type Request = http.Request
@@ -125,7 +123,7 @@ type ResponseWriter = http.ResponseWriter
 type Writer = ResponseWriter
 
 // RealClientAddr returns the Client IP, using "X-Real-Ip", and then "X-Forwarded-For", before defaulting to RemoteAddr
-func RealClientAddr(r *http.Request) string {
+func RealClientAddr(r *Request) string {
 	if realIp := r.Header.Get("X-Real-Ip"); realIp != "" {
 		return realIp
 	} else if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
@@ -142,4 +140,28 @@ func ParseRequestBody[T any](r *Request, parserFunc func([]byte, any) error) (*T
 		return nil, Error(StatusBadRequest, err.Error())
 	}
 	return &v, nil
+}
+
+func StripPrefix(prefix string, h Handler) Handler { return http.StripPrefix(prefix, h) }
+
+func StripPrefixMiddleware(prefix string) Middleware {
+	return func(next Handler) Handler { return StripPrefix(prefix, next) }
+}
+
+func AddPrefix(prefix string, h Handler) Handler {
+	if prefix == "" {
+		return h
+	}
+	return HandlerFunc(func(w Writer, r *Request) {
+		r2 := new(Request)
+		*r2 = *r
+		r2.URL = new(URL)
+		*r2.URL = *r.URL
+		r2.URL.Path = prefix + r.URL.Path
+		h.ServeHTTP(w, r2)
+	})
+}
+
+func AddPrefixMiddleware(prefix string) Middleware {
+	return func(next Handler) Handler { return AddPrefix(prefix, next) }
 }

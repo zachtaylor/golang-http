@@ -11,7 +11,7 @@ import (
 type AcceptOptions = websocket.AcceptOptions
 
 // Accept wraps websocket.Accept
-func Accept(w http.ResponseWriter, r *http.Request, opt *AcceptOptions) (*Conn, error) {
+func Accept(w http.Writer, r *http.Request, opt *AcceptOptions) (*Conn, error) {
 	return websocket.Accept(w, r, opt)
 }
 

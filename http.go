@@ -1,6 +1,9 @@
 package http // import "taylz.io/http"
 
-import "net/http"
+import (
+	"io"
+	"net/http"
+)
 
 // Cookie = http.Cookie
 type Cookie = http.Cookie
@@ -20,8 +23,24 @@ type Handler = http.Handler
 // HandlerFunc = http.HandlerFunc
 type HandlerFunc = http.HandlerFunc
 
-// F_Handler is a func alias
-type F_Handler = func(ResponseWriter, *Request)
+// IndexHandler returns a Handler that maps every request to /index.html for injected FileSystem, without issuing a redirect
+func IndexHandler(fs FileSystem) Handler {
+	return HandlerFunc(func(w Writer, r *Request) {
+		if file, err := fs.Open("/index.html"); err != nil {
+			w.Write([]byte("not found"))
+		} else {
+			io.Copy(w, file)
+			file.Close()
+		}
+	})
+}
+
+// BufferHandler returns a Handler that always writes the closured bytes
+func BufferHandler(bytes []byte) Handler {
+	return HandlerFunc(func(w Writer, r *Request) {
+		w.Write(bytes)
+	})
+}
 
 // ListenAndServe calls http.ListenAndServe
 func ListenAndServe(addr string, handler Handler) error {
@@ -38,44 +57,74 @@ type Middleware = func(next Handler) Handler
 
 func Use(h Handler, m ...Middleware) Handler { return Using(m, h) }
 
-func Using(mh []Middleware, h Handler) Handler {
-	if len(mh) < 1 {
+func Using(ms []Middleware, h Handler) Handler {
+	if len(ms) < 1 {
 		return h
 	}
-	for i := len(mh) - 1; i >= 0; i-- {
-		h = mh[i](h)
+	for i := len(ms) - 1; i >= 0; i-- {
+		h = ms[i](h)
 	}
 	return h
 }
 
+func methodMiddlewareString(method string) Middleware {
+	return func(next Handler) Handler {
+		return HandlerFunc(func(w Writer, r *Request) {
+			if r.Method != method {
+				w.WriteHeader(StatusMethodNotAllowed)
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		})
+	}
+}
+
+var (
+	MethodMiddlewareCONNECT = methodMiddlewareString("CONNECT")
+	MethodMiddlewareDELETE  = methodMiddlewareString("DELETE")
+	MethodMiddlewareGET     = methodMiddlewareString("GET")
+	MethodMiddlewareHEAD    = methodMiddlewareString("HEAD")
+	MethodMiddlewareOPTIONS = methodMiddlewareString("OPTIONS")
+	MethodMiddlewarePOST    = methodMiddlewareString("POST")
+	MethodMiddlewarePUT     = methodMiddlewareString("PUT")
+	MethodMiddlewareTRACE   = methodMiddlewareString("TRACE")
+)
+
+func PathRouterMiddleware(path string) RouterMiddleware {
+	return func(next Router) Router {
+		if path == "" {
+			return next
+		}
+		return RouterFunc(func(r *Request) bool {
+			if len(r.URL.Path) < len(path) || r.URL.Path[:len(path)] != path {
+				return false
+			}
+
+			r2 := new(Request)
+			*r2 = *r
+			r2.URL = new(URL)
+			*r2.URL = *r.URL
+			r2.URL.Path = r.URL.Path[len(path):]
+			return next.RouteHTTP(r2)
+		})
+	}
+}
+
 // Redirect calls http.Redirect
-func Redirect(w ResponseWriter, r *Request, url string, code int) {
+func Redirect(w Writer, r *Request, url string, code int) {
 	http.Redirect(w, r, url, code)
 }
 
 // Request = http.Request
 type Request = http.Request
 
-// ResponseWriter = http.ResponseWriter
+// Writer = http.ResponseWriter
 type ResponseWriter = http.ResponseWriter
 
-// Path is a struct with Router and Handler pointers
-type Path struct {
-	Router  Router
-	Handler Handler
-}
+// Writer = ResponseWriter
+type Writer = ResponseWriter
 
-// NewPath creates a Path
-func NewPath(router Router, handler Handler) Path { return Path{Router: router, Handler: handler} }
-
-func NewPathFunc(router Router, f F_Handler) Path { return NewPath(router, HandlerFunc(f)) }
-
-// RouteHTTP implements Router by calling calling the internal Router
-func (p Path) RouteHTTP(r *Request) bool { return p.Router.RouteHTTP(r) }
-
-// ServeHTTP implements Handler by calling calling the internal Handler
-func (p Path) ServeHTTP(w ResponseWriter, r *Request) { p.Handler.ServeHTTP(w, r) }
-
+// RealClientAddr returns the Client IP, using "X-Real-Ip", and then "X-Forwarded-For", before defaulting to RemoteAddr
 func RealClientAddr(r *http.Request) string {
 	if realIp := r.Header.Get("X-Real-Ip"); realIp != "" {
 		return realIp
@@ -85,25 +134,12 @@ func RealClientAddr(r *http.Request) string {
 	return r.RemoteAddr
 }
 
-// Error is an error with a status code
-type Error interface {
-	error
-	StatusCode() int
-}
-
-// StatusError creates an Error with status code
-func StatusError(code int, err string) statusError {
-	return statusError{
-		code: code,
-		err:  err,
+func ParseRequestBody[T any](r *Request, parserFunc func([]byte, any) error) (*T, error) {
+	var v T
+	if payload, err := io.ReadAll(r.Body); err != nil {
+		return nil, Error(StatusBadRequest, err.Error())
+	} else if err = parserFunc(payload, &v); err != nil {
+		return nil, Error(StatusBadRequest, err.Error())
 	}
+	return &v, nil
 }
-
-type statusError struct {
-	code int
-	err  string
-}
-
-func (err statusError) Error() string { return err.err }
-
-func (err statusError) StatusCode() int { return err.code }

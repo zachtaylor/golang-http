@@ -1,7 +1,5 @@
 package http
 
-import "net/http"
-
 // Fork is a Pather made of []Pather
 type Fork []Path
 
@@ -11,23 +9,32 @@ func NewFork() *Fork { return &Fork{} }
 // Add appends Pathers to this Fork
 func (f *Fork) Add(paths ...Path) ForkBuilder { *f = append(*f, paths...); return f }
 
-// Path calls Add with a new Path
+// Path is short for Add(Path{r, h})
 func (f *Fork) Path(r Router, h Handler) ForkBuilder { f.Add(Path{Router: r, Handler: h}); return f }
 
-// PathFunc calls Path with HandlerFunc(hf)
-func (f *Fork) PathFunc(r Router, hf func(ResponseWriter, *Request)) ForkBuilder {
+// PathFunc is short for Path(r, HandlerFunc(hf))
+func (f *Fork) PathFunc(r Router, hf func(Writer, *Request)) ForkBuilder {
 	f.Path(r, HandlerFunc(hf))
 	return f
 }
 
-// PathFunc calls Path with HandlerFuncs(hf)
-func (f *Fork) PathFuncs(rh func(*Request) bool, hf func(ResponseWriter, *Request)) ForkBuilder {
-	f.PathFunc(RouterFunc(rh), hf)
+// PathFunc is short for PathFunc(RouterFunc(rf), hf)
+func (f *Fork) PathFuncs(rf func(*Request) bool, hf func(Writer, *Request)) ForkBuilder {
+	f.PathFunc(RouterFunc(rf), hf)
+	return f
+}
+
+// Handle is short for Path(RoutePathExact(path), h)
+func (f *Fork) Handle(path string, h Handler) ForkBuilder { f.Path(RoutePathExact(path), h); return f }
+
+// HandleFunc is short for Handle(path, HandlerFunc(hf))
+func (f *Fork) HandleFunc(path string, hf func(Writer, *Request)) ForkBuilder {
+	f.Handle(path, HandlerFunc(hf))
 	return f
 }
 
 func (f *Fork) With(routers []RouterMiddleware, middlewares []Middleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f.Path(
 				UsingRouterMiddleware(routers, p.Router),
@@ -38,7 +45,7 @@ func (f *Fork) With(routers []RouterMiddleware, middlewares []Middleware) ForkBu
 }
 
 func (f *Fork) WithMiddlewares(middlewares ...Middleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f.Path(
 				p.Router,
@@ -49,7 +56,7 @@ func (f *Fork) WithMiddlewares(middlewares ...Middleware) ForkBuilder {
 }
 
 func (f *Fork) WithRouters(routers ...RouterMiddleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f.Path(
 				UsingRouterMiddleware(routers, p.Router),
@@ -59,7 +66,7 @@ func (f *Fork) WithRouters(routers ...RouterMiddleware) ForkBuilder {
 	})
 }
 
-func (f *Fork) ServeHTTP(w ResponseWriter, r *Request) {
+func (f *Fork) ServeHTTP(w Writer, r *Request) {
 	var h Handler
 	for _, p := range *f {
 		if p.RouteHTTP(r) {
@@ -73,33 +80,45 @@ func (f *Fork) ServeHTTP(w ResponseWriter, r *Request) {
 }
 
 type ForkBuilder interface {
-	Add(paths ...Path) ForkBuilder
+	Add(...Path) ForkBuilder
 	Path(Router, Handler) ForkBuilder
-	PathFunc(Router, func(ResponseWriter, *Request)) ForkBuilder
-	PathFuncs(func(*Request) bool, func(ResponseWriter, *Request)) ForkBuilder
+	PathFunc(Router, func(Writer, *Request)) ForkBuilder
+	PathFuncs(func(*Request) bool, func(Writer, *Request)) ForkBuilder
+	Handle(path string, h Handler) ForkBuilder
+	HandleFunc(path string, hf func(Writer, *Request)) ForkBuilder
 	With([]RouterMiddleware, []Middleware) ForkBuilder
 	WithMiddlewares(...Middleware) ForkBuilder
 	WithRouters(...RouterMiddleware) ForkBuilder
 }
 
-type ForkWithFunc func(...Path)
+type ForkFunc func(...Path)
 
-func (f ForkWithFunc) Add(paths ...Path) ForkBuilder { f(paths...); return f }
+func (f ForkFunc) Add(paths ...Path) ForkBuilder { f(paths...); return f }
 
-func (f ForkWithFunc) Path(r Router, h Handler) ForkBuilder { f(NewPath(r, h)); return f }
+func (f ForkFunc) Path(r Router, h Handler) ForkBuilder { f(NewPath(r, h)); return f }
 
-func (f ForkWithFunc) PathFunc(r Router, hf func(ResponseWriter, *Request)) ForkBuilder {
-	f.Path(r, http.HandlerFunc(hf))
+func (f ForkFunc) PathFunc(r Router, hf func(Writer, *Request)) ForkBuilder {
+	f.Path(r, HandlerFunc(hf))
 	return f
 }
 
-func (f ForkWithFunc) PathFuncs(rf func(*Request) bool, hf func(ResponseWriter, *Request)) ForkBuilder {
+func (f ForkFunc) PathFuncs(rf func(*Request) bool, hf func(Writer, *Request)) ForkBuilder {
 	f.Path(RouterFunc(rf), HandlerFunc(hf))
 	return f
 }
 
-func (f ForkWithFunc) With(routers []RouterMiddleware, middlewares []Middleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+func (f ForkFunc) Handle(path string, h Handler) ForkBuilder {
+	f.Path(RoutePathExact(path), h)
+	return f
+}
+
+func (f ForkFunc) HandleFunc(path string, hf func(Writer, *Request)) ForkBuilder {
+	f.Handle(path, HandlerFunc(hf))
+	return f
+}
+
+func (f ForkFunc) With(routers []RouterMiddleware, middlewares []Middleware) ForkBuilder {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f(Path{
 				Router:  UsingRouterMiddleware(routers, p.Router),
@@ -109,8 +128,8 @@ func (f ForkWithFunc) With(routers []RouterMiddleware, middlewares []Middleware)
 	})
 }
 
-func (f ForkWithFunc) WithMiddlewares(middlewares ...Middleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+func (f ForkFunc) WithMiddlewares(middlewares ...Middleware) ForkBuilder {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f(Path{
 				Router:  p.Router,
@@ -120,8 +139,8 @@ func (f ForkWithFunc) WithMiddlewares(middlewares ...Middleware) ForkBuilder {
 	})
 }
 
-func (f ForkWithFunc) WithRouters(routers ...RouterMiddleware) ForkBuilder {
-	return ForkWithFunc(func(paths ...Path) {
+func (f ForkFunc) WithRouters(routers ...RouterMiddleware) ForkBuilder {
+	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f(Path{
 				Router:  UsingRouterMiddleware(routers, p.Router),

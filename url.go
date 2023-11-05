@@ -6,10 +6,7 @@ import "net/url"
 type URL = url.URL
 
 // ParseURL calls url.Parse
-func ParseURL(rawurl string) (*URL, error) {
-	return url.Parse(rawurl)
-}
+func ParseURL(rawurl string) (*URL, error) { return url.Parse(rawurl) }
 
-func QueryEscape(s string) string {
-	return url.QueryEscape(s)
-}
+// QueryEscape calls url.QueryEscape
+func QueryEscape(s string) string { return url.QueryEscape(s) }

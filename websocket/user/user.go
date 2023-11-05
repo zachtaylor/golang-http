@@ -1,12 +1,54 @@
 package user // import "taylz.io/http/user"
 
 import (
+	"errors"
 	"sync"
 
+	"taylz.io/http"
 	"taylz.io/http/session"
 	"taylz.io/http/websocket"
 	"taylz.io/maps"
 )
+
+var (
+	// ErrSessionSync indicates a caching issue with session.Manager
+	ErrSessionSync = errors.New("user: session out of sync")
+
+	// ErrMissingConn indicates a write has no available websockets
+	ErrMissingConn = errors.New("user: missing conn instance")
+)
+
+// Manager is a user manager
+type Manager interface {
+	Reader
+	Writer
+	// Size returns the current len of the map
+	Size() int
+	// Get returns a user by name
+	Get(string) *T
+	// Must (re)authorizes a session for a websocket
+	Must(*websocket.T, string) *T
+	// GetWebsocket returns a user by websocket
+	GetWebsocket(*websocket.T) *T
+	// Observe adds a callback CacheObserver
+	Observe(Observer)
+}
+
+type Observer = maps.Observer[string, *T]
+
+type ObserverFunc = maps.ObserverFunc[string, *T]
+
+// Reader is an interface for recognizing Users in http.Request
+type Reader interface {
+	// ReadHTTP returns the User and Session
+	ReadHTTP(*http.Request) (*T, error)
+}
+
+// Writer is an interface for writing Users to http.Writer
+type Writer interface {
+	// WriteHTTP writes the Set-Cookie header using the session.Manager
+	WriteHTTP(http.Writer, *T)
+}
 
 // T is a user, bridges session and websocket
 type T struct {

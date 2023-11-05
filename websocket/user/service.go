@@ -1,6 +1,7 @@
 package user
 
 import (
+	"taylz.io/http"
 	"taylz.io/http/session"
 	"taylz.io/http/websocket"
 	"taylz.io/maps"
@@ -55,3 +56,16 @@ func (s *Service) GetWebsocket(ws *websocket.T) (user *T) {
 }
 
 func (s *Service) Observe(f Observer) { s.cache.Observe(f) }
+
+func (s *Service) ReadHTTP(r *http.Request) (*T, error) {
+	if session, err := s.sessions.ReadHTTP(r); session == nil {
+		return nil, err
+	} else if user := s.Get(session.Name()); user != nil {
+		return user, nil
+	}
+	return nil, ErrSessionSync
+}
+
+func (s *Service) WriteHTTP(w http.Writer, user *T) {
+	s.sessions.WriteHTTP(w, user.session)
+}

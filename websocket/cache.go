@@ -16,7 +16,7 @@ type Cache struct {
 	maps.Observable[string, *T]
 }
 
-func NewCache(protocol Protocol, keygen func() string, settings ...AcceptOptionSetting) *Cache {
+func NewCache(protocol Protocol, keygen func() string, settings ...AcceptOptionSetter) *Cache {
 	acceptOptions := &AcceptOptions{
 		Subprotocols:   protocol.GetSubprotocols(),
 		OriginPatterns: make([]string, 0),
@@ -32,7 +32,7 @@ func NewCache(protocol Protocol, keygen func() string, settings ...AcceptOptionS
 	}
 }
 
-func (cache *Cache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (cache *Cache) ServeHTTP(w http.Writer, r *http.Request) {
 	if conn, err := Accept(w, r, cache.acceptOptions); conn == nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
@@ -50,7 +50,7 @@ func (cache *Cache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type AcceptOptionSetting interface {
+type AcceptOptionSetter interface {
 	SetAcceptOption(a *AcceptOptions)
 }
 
@@ -60,7 +60,7 @@ func (b insecureSkipVerify) SetAcceptOption(a *AcceptOptions) {
 	a.InsecureSkipVerify = bool(b)
 }
 
-func WithInsecureSkipVerify(b bool) AcceptOptionSetting {
+func WithInsecureSkipVerify(b bool) AcceptOptionSetter {
 	return insecureSkipVerify(b)
 }
 
@@ -70,7 +70,7 @@ func (o originPatterns) SetAcceptOption(a *AcceptOptions) {
 	a.OriginPatterns = []string(o)
 }
 
-func WithOriginPatterns(s []string) AcceptOptionSetting {
+func WithOriginPatterns(s []string) AcceptOptionSetter {
 	return originPatterns(s)
 }
 
@@ -80,7 +80,7 @@ func (c compressionMode) SetAcceptOption(a *AcceptOptions) {
 	a.CompressionMode = CompressionMode(c)
 }
 
-func WithCompressionMode(c CompressionMode) AcceptOptionSetting {
+func WithCompressionMode(c CompressionMode) AcceptOptionSetter {
 	return compressionMode(c)
 }
 
@@ -90,6 +90,6 @@ func (c compressionThreshold) SetAcceptOption(a *AcceptOptions) {
 	a.CompressionThreshold = int(c)
 }
 
-func WithCompressionThreshold(c int) AcceptOptionSetting {
+func WithCompressionThreshold(c int) AcceptOptionSetter {
 	return compressionThreshold(c)
 }

@@ -8,7 +8,7 @@ import (
 
 type messageSerializer struct{}
 
-func NewMessageSerializer() *websocket.MessageSerializer { return nil }
+func NewMessageSerializer() websocket.MessageSerializer { return (*messageSerializer)(nil) }
 
 func (*messageSerializer) Encode(msg websocket.Message) ([]byte, error) { return json.Marshal(msg) }
 

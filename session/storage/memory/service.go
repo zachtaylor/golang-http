@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"taylz.io/http"
-	"taylz.io/http/security"
 	"taylz.io/http/session"
 )
 
@@ -80,7 +79,7 @@ func CookieReader(s *Service) session.HTTPReader {
 	})
 }
 
-var errBearerTokenFormat = http.StatusError(http.StatusBadRequest, "Authorization format bad")
+var errBearerTokenFormat = http.Error(http.StatusBadRequest, "Authorization format bad")
 
 func BearerReader(s *Service) session.HTTPReader {
 	return session.HTTPReaderFunc(func(r *http.Request) (t *session.T, err error) {
@@ -90,7 +89,7 @@ func BearerReader(s *Service) session.HTTPReader {
 			err = errBearerTokenFormat
 		} else if bearer[:6] != "Bearer" {
 			err = errBearerTokenFormat
-		} else if token := bearer[7:]; strings.Trim(token, security.CHARS_UUID) != "" {
+		} else if token := bearer[7:]; strings.Trim(token, "0123456789abcdef-") != "" {
 			err = errBearerTokenFormat
 		} else if t = s.Get(token); t == nil {
 			err = session.ErrExpired
@@ -104,7 +103,7 @@ func (s *Service) ReadHTTP(r *http.Request) (t *session.T, err error) {
 }
 
 // WriteHTTP writes the Set-Cookie header
-func (s *Service) WriteHTTP(w http.ResponseWriter, t *session.T) {
+func (s *Service) WriteHTTP(w http.Writer, t *session.T) {
 	if t == nil {
 		w.Header().Set("Set-Cookie", s.CookieID+"=; Path=/; Expires==Thu, 01 Jan 1970 00:00:00 GMT;")
 		return

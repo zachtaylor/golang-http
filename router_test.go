@@ -1,14 +1,14 @@
-package router_test
+package http_test
 
 import (
 	"net/http/httptest"
 	"testing"
 
-	"taylz.io/http/router"
+	"taylz.io/http"
 )
 
 func TestPathStarts(t *testing.T) {
-	router := router.PathStarts("/hello/")
+	router := http.RoutePathPrefix("/hello/")
 
 	r := httptest.NewRequest("", "/hello/", nil)
 

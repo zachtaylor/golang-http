@@ -8,7 +8,7 @@ import (
 )
 
 func TestPathStarts(t *testing.T) {
-	router := http.RoutePathPrefix("/hello/")
+	router := http.PathPrefixRouter("/hello/")
 
 	r := httptest.NewRequest("", "/hello/", nil)
 

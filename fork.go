@@ -20,12 +20,12 @@ func (f *Fork) PathFunc(r Router, hf func(Writer, *Request)) ForkBuilder {
 
 // PathFunc is short for PathFunc(RouterFunc(rf), hf)
 func (f *Fork) PathFuncs(rf func(*Request) bool, hf func(Writer, *Request)) ForkBuilder {
-	f.PathFunc(RouterFunc(rf), hf)
+	f.PathFunc(FuncRouter(rf), hf)
 	return f
 }
 
 // Handle is short for Path(RoutePathExact(path), h)
-func (f *Fork) Handle(path string, h Handler) ForkBuilder { f.Path(RoutePathExact(path), h); return f }
+func (f *Fork) Handle(path string, h Handler) ForkBuilder { f.Path(PathMatchRouter(path), h); return f }
 
 // HandleFunc is short for Handle(path, HandlerFunc(hf))
 func (f *Fork) HandleFunc(path string, hf func(Writer, *Request)) ForkBuilder {
@@ -37,7 +37,7 @@ func (f *Fork) With(routers []RouterMiddleware, middlewares []Middleware) ForkBu
 	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f.Path(
-				UsingRouterMiddleware(routers, p.Router),
+				UsingRouter(routers, p.Router),
 				Using(middlewares, p.Handler),
 			)
 		}
@@ -59,7 +59,7 @@ func (f *Fork) WithRouters(routers ...RouterMiddleware) ForkBuilder {
 	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f.Path(
-				UsingRouterMiddleware(routers, p.Router),
+				UsingRouter(routers, p.Router),
 				p.Handler,
 			)
 		}
@@ -103,12 +103,12 @@ func (f ForkFunc) PathFunc(r Router, hf func(Writer, *Request)) ForkBuilder {
 }
 
 func (f ForkFunc) PathFuncs(rf func(*Request) bool, hf func(Writer, *Request)) ForkBuilder {
-	f.Path(RouterFunc(rf), HandlerFunc(hf))
+	f.Path(FuncRouter(rf), HandlerFunc(hf))
 	return f
 }
 
 func (f ForkFunc) Handle(path string, h Handler) ForkBuilder {
-	f.Path(RoutePathExact(path), h)
+	f.Path(PathMatchRouter(path), h)
 	return f
 }
 
@@ -121,7 +121,7 @@ func (f ForkFunc) With(routers []RouterMiddleware, middlewares []Middleware) For
 	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f(Path{
-				Router:  UsingRouterMiddleware(routers, p.Router),
+				Router:  UsingRouter(routers, p.Router),
 				Handler: Using(middlewares, p.Handler),
 			})
 		}
@@ -143,7 +143,7 @@ func (f ForkFunc) WithRouters(routers ...RouterMiddleware) ForkBuilder {
 	return ForkFunc(func(paths ...Path) {
 		for _, p := range paths {
 			f(Path{
-				Router:  UsingRouterMiddleware(routers, p.Router),
+				Router:  UsingRouter(routers, p.Router),
 				Handler: p.Handler,
 			})
 		}

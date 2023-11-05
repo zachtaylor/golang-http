@@ -1,7 +1,5 @@
 package http
 
-import "encoding/json"
-
 // StatusError is an error with a status code
 type StatusError interface {
 	error
@@ -31,6 +29,18 @@ func WriteErrorStatusJSON(w Writer, err error) {
 	} else {
 		w.WriteHeader(500)
 	}
-	data, _ := json.Marshal(map[string]any{"error": err.Error()})
-	w.Write(data)
+	w.Write(MustMarshalJSON(map[string]any{"error": err.Error()}))
+}
+
+func WriteError(w Writer, r *Request, err error) {
+	if statusErr, ok := err.(StatusError); ok {
+		w.WriteHeader(statusErr.StatusCode())
+	} else {
+		w.WriteHeader(500)
+	}
+	if accept := r.Header.Get("Accept"); StringContains(accept, "application/json") {
+		w.Write(MustMarshalJSON(map[string]any{"error": err.Error()}))
+	} else if StringContains(accept, "text/html") {
+		w.Write([]byte(`<html><body><p>error: ` + err.Error() + `</p></body></html>`))
+	}
 }

@@ -105,6 +105,8 @@ func (ws *T) Subprotocol() string { return ws.conn.Subprotocol() }
 
 func (ws *T) WriteText(buf []byte) error { return ws.WriteText(buf) }
 
+func (ws *T) WriteMessage(msg *Message) error { return ws.WriteText(http.MustMarshalJSON(msg)) }
+
 func (ws *T) WriteBinary(buf []byte) error { return ws.WriteBinary(buf) }
 
 func (ws *T) Write(typ MessageType, buf []byte) error {

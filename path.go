@@ -25,7 +25,7 @@ func SinglePagePath(fs FileSystem, cache bool) Path {
 	if cache {
 		file, _ := fs.Open("/index.html")
 		bytes, _ := io.ReadAll(file)
-		handler = BufferHandler(bytes)
+		handler = BufferedHandler(bytes)
 	} else {
 		handler = IndexHandler(fs)
 	}

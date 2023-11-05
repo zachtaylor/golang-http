@@ -7,21 +7,21 @@ type Router interface {
 	RouteHTTP(*Request) bool
 }
 
-// RouteHost is a string type for matching Request.Host
-type RouteHost string
+// HostRouter is a string type for matching Request.Host
+type HostRouter string
 
-func (host RouteHost) RouteHTTP(r *Request) bool { return string(host) == r.Host }
+func (host HostRouter) RouteHTTP(r *Request) bool { return string(host) == r.Host }
 
-// RouterFunc is a func type Router
-type RouterFunc func(*Request) bool
+// FuncRouter is a func type Router
+type FuncRouter func(*Request) bool
 
 // RouteHTTP implements Router by calling f
-func (f RouterFunc) RouteHTTP(r *Request) bool { return f(r) }
+func (f FuncRouter) RouteHTTP(r *Request) bool { return f(r) }
 
-// RoutersAnd is a Router group that returns true when all Routers in the group return true
-type RoutersAnd []Router
+// AllOfRouters is a Router group that returns true when all Routers in the group return true
+type AllOfRouters []Router
 
-func (and RoutersAnd) RouteHTTP(r *Request) bool {
+func (and AllOfRouters) RouteHTTP(r *Request) bool {
 	for _, router := range and {
 		if !router.RouteHTTP(r) {
 			return false
@@ -30,10 +30,10 @@ func (and RoutersAnd) RouteHTTP(r *Request) bool {
 	return true
 }
 
-// RoutersOr is a Router group that returns true when any Routers in the group returns true
-type RoutersOr []Router
+// AnyOfRouters is a Router group that returns true when any Routers in the group returns true
+type AnyOfRouters []Router
 
-func (or RoutersOr) RouteHTTP(r *Request) bool {
+func (or AnyOfRouters) RouteHTTP(r *Request) bool {
 	for _, router := range or {
 		if router.RouteHTTP(r) {
 			return true
@@ -42,96 +42,65 @@ func (or RoutersOr) RouteHTTP(r *Request) bool {
 	return false
 }
 
-type RouteMethod string
+type methodRouter string
 
-func (method RouteMethod) RouteHTTP(r *Request) bool { return string(method) == r.Method }
+func (method methodRouter) RouteHTTP(r *Request) bool { return string(method) == r.Method }
 
 const (
-	RouteMethodCONNECT RouteMethod = "CONNECT"
-	RouteMethodDELETE  RouteMethod = "DELETE"
-	RouteMethodGET     RouteMethod = "GET"
-	RouteMethodHEAD    RouteMethod = "HEAD"
-	RouteMethodOPTIONS RouteMethod = "OPTIONS"
-	RouteMethodPOST    RouteMethod = "POST"
-	RouteMethodPUT     RouteMethod = "PUT"
-	RouteMethodTRACE   RouteMethod = "TRACE"
+	MethodRouterCONNECT methodRouter = "CONNECT"
+	MethodRouterDELETE  methodRouter = "DELETE"
+	MethodRouterGET     methodRouter = "GET"
+	MethodRouterHEAD    methodRouter = "HEAD"
+	MethodRouterOPTIONS methodRouter = "OPTIONS"
+	MethodRouterPOST    methodRouter = "POST"
+	MethodRouterPUT     methodRouter = "PUT"
+	MethodRouterTRACE   methodRouter = "TRACE"
 )
 
-type RouterMiddleware = func(Router) Router
-
-func RouterMiddlewareFunc(middleware Router) RouterMiddleware {
-	return func(next Router) Router {
-		return RouterFunc(func(r *Request) bool {
-			return middleware.RouteHTTP(r) && next.RouteHTTP(r)
-		})
-	}
-}
-
-func UsingRouterMiddleware(mr []RouterMiddleware, r Router) Router {
-	if len(mr) < 1 {
-		return r
-	}
-	for _, m := range mr {
-		r = m(r)
-	}
-	return r
-}
-
-var (
-	RouterMiddlewareCONNECT = RouterMiddlewareFunc(RouteMethodCONNECT)
-	RouterMiddlewareDELETE  = RouterMiddlewareFunc(RouteMethodDELETE)
-	RouterMiddlewareGET     = RouterMiddlewareFunc(RouteMethodGET)
-	RouterMiddlewareHEAD    = RouterMiddlewareFunc(RouteMethodHEAD)
-	RouterMiddlewareOPTIONS = RouterMiddlewareFunc(RouteMethodOPTIONS)
-	RouterMiddlewarePOST    = RouterMiddlewareFunc(RouteMethodPOST)
-	RouterMiddlewarePUT     = RouterMiddlewareFunc(RouteMethodPUT)
-	RouterMiddlewareTRACE   = RouterMiddlewareFunc(RouteMethodTRACE)
-)
-
-// RoutePathExact is a string type that matches a path literal
-type RoutePathExact string
+// PathMatchRouter is a string type that matches a path literal
+type PathMatchRouter string
 
 // RouteHTTP implements Router by literally matching the request path
-func (path RoutePathExact) RouteHTTP(r *Request) bool {
+func (path PathMatchRouter) RouteHTTP(r *Request) bool {
 	return string(path) == r.URL.Path
 }
 
-// RoutePathPrefix is a string type that matches a path prefix
-type RoutePathPrefix string
+// PathPrefixRouter is a string type that matches a path prefix
+type PathPrefixRouter string
 
 // RouteHTTP implements Router by matching the path prefix
-func (prefix RoutePathPrefix) RouteHTTP(r *Request) bool {
+func (prefix PathPrefixRouter) RouteHTTP(r *Request) bool {
 	if len(r.URL.Path) < len(prefix) {
 		return false
 	}
 	return string(prefix) == r.URL.Path[:len(prefix)]
 }
 
-// RouteTLS is a bool type that matches Request.TLS != nil
-type RouteTLS bool
+// TLSRouter is a bool type that matches Request.TLS != nil
+type TLSRouter bool
 
 // RouteHTTP implements Router by matching Request.TLS != nil
-func (tls RouteTLS) RouteHTTP(r *Request) bool { return tls == (r.TLS != nil) }
+func (tls TLSRouter) RouteHTTP(r *Request) bool { return tls == (r.TLS != nil) }
 
-// RouteUserAgent is a string type for matching Request.Header["User-Agent"]
-type RouteUserAgent string
+// UserAgentRouter is a string type for matching Request.Header["User-Agent"]
+type UserAgentRouter string
 
 // RouteHTTP matches the first chars of Request.Header["User-Agent"]
-func (ua RouteUserAgent) RouteHTTP(r *Request) bool {
+func (ua UserAgentRouter) RouteHTTP(r *Request) bool {
 	header := r.Header.Get("User-Agent")
 	return len(header) >= len(ua) && header[:len(ua)] == string(ua)
 }
 
-// RouteAll returns a Router that always returns true
-func RouteAll() Router { return RouterFunc(func(*Request) bool { return true }) }
+// AnyRouter returns a Router that always returns true
+func AnyRouter() Router { return FuncRouter(func(*Request) bool { return true }) }
 
-// SinglePage returns a HTTPRouter that checks for Single Page App response
+// SinglePageRouter returns a Router that checks for Single Page App response
 //
 // Request.Method is GET
 // Request.URL.Path does not have a period (.)
 // Request.Header["Accept"] contains "text/html"
 func SinglePageRouter() Router {
-	return RouterFunc(func(r *Request) bool {
+	return FuncRouter(func(r *Request) bool {
 		return r.Method == "GET" &&
 			!strings.Contains(r.URL.Path, ".") &&
 			strings.Contains(r.Header.Get("Accept"), "text/html")

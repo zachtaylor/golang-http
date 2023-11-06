@@ -2,6 +2,8 @@ package http
 
 type RouterMiddleware = func(Router) Router
 
+func UseRouter(r Router, rm ...RouterMiddleware) Router { return UsingRouter(rm, r) }
+
 // UsingRouter applies RouterMiddlewares to a Router
 func UsingRouter(mr []RouterMiddleware, r Router) Router {
 	if len(mr) < 1 {
@@ -13,8 +15,7 @@ func UsingRouter(mr []RouterMiddleware, r Router) Router {
 	return r
 }
 
-// RouterMiddlewarePath
-func RouterMiddlewarePath(path string) RouterMiddleware {
+func PathRouterMiddleware(path string) RouterMiddleware {
 	return func(next Router) Router {
 		if path == "" {
 			return next
@@ -34,7 +35,7 @@ func RouterMiddlewarePath(path string) RouterMiddleware {
 	}
 }
 
-func routerMiddlewareRouter(router Router) RouterMiddleware {
+func routerRouterMiddleware(router Router) RouterMiddleware {
 	return func(next Router) Router {
 		return FuncRouter(func(r *Request) bool {
 			return router.RouteHTTP(r) && next.RouteHTTP(r)
@@ -43,12 +44,12 @@ func routerMiddlewareRouter(router Router) RouterMiddleware {
 }
 
 var (
-	RouterMiddlewareCONNECT = routerMiddlewareRouter(MethodRouterCONNECT)
-	RouterMiddlewareDELETE  = routerMiddlewareRouter(MethodRouterDELETE)
-	RouterMiddlewareGET     = routerMiddlewareRouter(MethodRouterGET)
-	RouterMiddlewareHEAD    = routerMiddlewareRouter(MethodRouterHEAD)
-	RouterMiddlewareOPTIONS = routerMiddlewareRouter(MethodRouterOPTIONS)
-	RouterMiddlewarePOST    = routerMiddlewareRouter(MethodRouterPOST)
-	RouterMiddlewarePUT     = routerMiddlewareRouter(MethodRouterPUT)
-	RouterMiddlewareTRACE   = routerMiddlewareRouter(MethodRouterTRACE)
+	RouterMiddlewareCONNECT = routerRouterMiddleware(MethodRouterCONNECT)
+	RouterMiddlewareDELETE  = routerRouterMiddleware(MethodRouterDELETE)
+	RouterMiddlewareGET     = routerRouterMiddleware(MethodRouterGET)
+	RouterMiddlewareHEAD    = routerRouterMiddleware(MethodRouterHEAD)
+	RouterMiddlewareOPTIONS = routerRouterMiddleware(MethodRouterOPTIONS)
+	RouterMiddlewarePOST    = routerRouterMiddleware(MethodRouterPOST)
+	RouterMiddlewarePUT     = routerRouterMiddleware(MethodRouterPUT)
+	RouterMiddlewareTRACE   = routerRouterMiddleware(MethodRouterTRACE)
 )

@@ -11,15 +11,17 @@ type Regexp = regexp.Regexp
 
 func NewRegexp(str string) *Regexp { return regexp.MustCompile(str) }
 
-func RegexpPathRouter(str string) Router {
-	regexp := NewRegexp(str)
+func RegexpPathRouter(regexp *Regexp) Router {
 	return FuncRouter(func(r *Request) bool {
 		return regexp.Match([]byte(r.URL.Path))
 	})
 }
 
-func RegexpPathContextMiddleware(str string) Middleware {
-	regexp := NewRegexp(str)
+func RegexpPathRouterMiddleware(regexp *Regexp) RouterMiddleware {
+	return routerRouterMiddleware(RegexpPathRouter(regexp))
+}
+
+func RegexpPathContextMiddleware(regexp *Regexp) Middleware {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(w Writer, r *Request) {
 			if matchResults := regexp.FindStringSubmatch(r.URL.Path); len(matchResults) < 1 || matchResults[0] == "" {

@@ -76,6 +76,10 @@ func (prefix PathPrefixRouter) RouteHTTP(r *Request) bool {
 	return string(prefix) == r.URL.Path[:len(prefix)]
 }
 
+func PathPrefixRouterMiddleware(str string) RouterMiddleware {
+	return routerRouterMiddleware(PathPrefixRouter(str))
+}
+
 // TLSRouter is a bool type that matches Request.TLS != nil
 type TLSRouter bool
 

@@ -52,7 +52,7 @@ func (s *Service) Size() int { return s.cache.Size() }
 
 // Update changes the internal expiry time of a Session
 func (s *Service) Update(id string) (err error) {
-	s.cache.WithLock(func() {
+	s.cache.RLock(func() {
 		if t := s.Get(id); t == nil {
 			err = session.ErrExpired
 		} else {
